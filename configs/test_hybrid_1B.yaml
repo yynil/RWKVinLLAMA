@@ -1,0 +1,7 @@
+RWKV:
+  layers: [0,4,8,12,16,20,24,28]
+  grap_cp: 1
+  pad_id: 128009
+
+Llama:
+  model_id: /media/yueyulin/data_4t/models/tinyLlama-1.1B-Chat-V1.0/

@@ -1,0 +1,4 @@
+model_id: /media/yueyulin/data_4t/models/tinyLlama-1.1B-Chat-V1.0/
+device: cuda:0
+dtype: bfloat16
+name_space: teacher_name_space
