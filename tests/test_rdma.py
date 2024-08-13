@@ -3,7 +3,18 @@ import numpy as np
 from cupy.cuda import nccl
 import os
 import multiprocessing as mp
-
+def enable_p2p():
+    num_gpus = cp.cuda.runtime.getDeviceCount()
+    for i in range(num_gpus):
+        for j in range(num_gpus):
+            if i != j:
+                can_access_peer = cp.cuda.runtime.deviceCanAccessPeer(i, j)
+                if can_access_peer:
+                    cp.cuda.runtime.deviceEnablePeerAccess(j)
+                    print(f"Enabled P2P access between GPU {i} and GPU {j}")
+                else:
+                    print(f"Cannot enable P2P access between GPU {i} and GPU {j}")
+enable_p2p()
 def server_process(nccl_id):
     # 设置 GPU 设备
     cp.cuda.Device(0).use()
@@ -12,19 +23,29 @@ def server_process(nccl_id):
     print("Initializing NCCL communicator")
     comm = nccl.NcclCommunicator(2, nccl_id, 0)
     print("Server initialized")
-
+    test_send_size = 2048*4096*20
+    import time
     # Server 逻辑
-    for _ in range(5):  # 执行 5 次数据交换
+    for i in range(5):  # 执行 5 次数据交换
         # 准备发送数据
-        send_data = cp.array([1.0, 2.0, 3.0])
-        comm.send(send_data, 1)
-        print("Server sent:", send_data)
+        start_time = time.time()
+        send_data = cp.array([2.0]*test_send_size,dtype=cp.float32)
+        comm.send(send_data.data.ptr, send_data.size, nccl.NCCL_FLOAT, 1, cp.cuda.Stream.null.ptr)
+        # cp.cuda.Stream.null.synchronize()
+        end_time = time.time()
+        print("Server sent (iteration {i}):", send_data, "Size:", send_data.nbytes)
+        elapsed_time = end_time - start_time
+        print(f'bandwidth sent: {send_data.nbytes/(end_time-start_time)/1024/1024} MB/s in {elapsed_time} seconds')
 
         # 接收数据
-        recv_data = cp.zeros_like(send_data)
-        comm.recv(recv_data, 1)
-        print("Server received:", recv_data)
-
+        start_time = time.time()
+        recv_data = cp.zeros(test_send_size, dtype=cp.float32)
+        comm.recv(recv_data.data.ptr, recv_data.size, nccl.NCCL_FLOAT, 1, cp.cuda.Stream.null.ptr)
+        # cp.cuda.Stream.null.synchronize()
+        end_time = time.time()
+        print("Server received (iteration {i}):", recv_data, "Size:", recv_data.nbytes)
+        elapsed_time = end_time - start_time
+        print(f'bandwidth received: {recv_data.nbytes/(end_time-start_time)/1024/1024} MB/s in {elapsed_time} seconds')
     print("Server finished")
 
 if __name__ == "__main__":
