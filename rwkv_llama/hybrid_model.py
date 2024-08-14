@@ -2,6 +2,7 @@ from src.model import RWKV_Tmix_x060, RWKV_CMix_x060,Block
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
+from torch.nn import functional as F
 
 
 import deepspeed
@@ -41,7 +42,7 @@ class RWVVDecoderLayer(nn.Module):
         return (hidden_states, None, past_key_value)
 
 class HybridModel(pl.LightningModule):
-    def __init__(self,transformer_model,rwkv_args):
+    def __init__(self,transformer_model,rwkv_args,teacher_model = None,tokenizer=None):
         super(HybridModel, self).__init__()
         self.emb = transformer_model.get_input_embeddings()
         attn_num_heads = transformer_model.config.num_attention_heads
@@ -63,7 +64,16 @@ class HybridModel(pl.LightningModule):
                 transformer_model.model.layers[layer_idx] = rwkv_encoder
         self.model = transformer_model
         self.args = rwkv_args
-    
+        self.teacher_model = teacher_model
+        #free the teacher model
+        if self.teacher_model is not None:
+            for param in self.teacher_model.parameters():
+                param.requires_grad = False
+            self.teacher_model.eval()
+        self.tokenizer = tokenizer
+        if self.tokenizer is not None:
+            if 'pad_token_id' not in self.tokenizer.__dict__:
+                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
     def forward(
         self,
         input_ids,
@@ -157,3 +167,27 @@ class HybridModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         args = self.args
+        teacher_model = self.teacher_model
+        tokenizer = self.tokenizer
+        input_ids = batch['input_ids']
+        labels = batch['labels']
+        attention_mask = torch.ne(input_ids, tokenizer.eos_token_id).to(input_ids.device)
+        with torch.no_grad():
+            teacher_outputs = teacher_model(
+                input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
+            teacher_logits = teacher_outputs.logits
+        targets = F.softmax(teacher_logits, dim=-1)
+        student_outputs = self.forward(
+            input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
+        student_logits = student_outputs.logits
+        student_cross_entropy_loss = student_outputs.loss
+        kl_loss = F.kl_div(F.log_softmax(
+            student_logits, dim=-1), targets, reduction='batchmean')
+
+        loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
+        self.log('train_loss', loss)
+        returned_loss = {}
+        returned_loss['loss'] = loss
+        returned_loss['kl_loss'] = kl_loss
+        returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
+        return returned_loss

@@ -1,7 +1,9 @@
 RWKV:
   layers: [0,4,8,12,16,20,24,28]
   grap_cp: 1
-  pad_id: 128009
 
 Llama:
   model_id: /data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/
+
+kl_weight: 0.1
+ce_weight: 1
