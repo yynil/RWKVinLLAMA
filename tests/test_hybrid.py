@@ -25,13 +25,13 @@ import yaml
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default='configs/test_hybrid.yaml')
 # args = parser.parse_args()
-config_file = 'configs/test_hybrid_1B.yaml'
+config_file = 'configs/test_hybrid.yaml'
 with open(config_file) as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 print(config)
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
-device = 'cuda'
+device = 'cuda:0'
 dtype = torch.bfloat16
 transformer_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'],
                                                          torch_dtype=dtype, device_map={'':'cpu'})
@@ -74,14 +74,16 @@ teacher_model = teacher_model.to('cuda')
 teacher_model.eval()
 import datasets 
 from datasets import load_from_disk
-ds_dir = '/media/yueyulin/data_4t/data/ultrachat_200k_ds/'
+ds_dir = '/data/rwkv/data/ultrachat_200k_ds_llama/'
 ds = load_from_disk(ds_dir)
 print(ds)
 input_ids = ds[0]['input_ids']
 labels = ds[0]['labels']
 input_ids = torch.tensor(input_ids,device=device,dtype=torch.long).unsqueeze(0)
 labels = torch.tensor(labels,device=device,dtype=torch.long).unsqueeze(0)
-attention_mask = torch.ne(input_ids, tokenizer.pad_token_id)
+attention_mask = torch.ne(input_ids, tokenizer.eos_token_id)
+print(input_ids)
+print(labels)
 print(attention_mask)
 print(input_ids.shape)
 print(labels.shape)

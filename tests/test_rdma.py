@@ -9,15 +9,18 @@ def enable_p2p():
         for j in range(num_gpus):
             if i != j:
                 can_access_peer = cp.cuda.runtime.deviceCanAccessPeer(i, j)
-                if can_access_peer:
-                    cp.cuda.runtime.deviceEnablePeerAccess(j)
-                    print(f"Enabled P2P access between GPU {i} and GPU {j}")
-                else:
-                    print(f"Cannot enable P2P access between GPU {i} and GPU {j}")
+                try:
+                    if can_access_peer:
+                        cp.cuda.runtime.deviceEnablePeerAccess(j)
+                        print(f"Enabled P2P access between GPU {i} and GPU {j}")
+                    else:
+                        print(f"Cannot enable P2P access between GPU {i} and GPU {j}")
+                except Exception as e:
+                    print(f"Cannot enable P2P access between GPU {i} and GPU {j} because {e}") 
 enable_p2p()
 def server_process(nccl_id):
     # 设置 GPU 设备
-    cp.cuda.Device(0).use()
+    cp.cuda.Device(2).use()
 
     # 初始化 NCCL 通信器
     print("Initializing NCCL communicator")

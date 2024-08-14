@@ -13,7 +13,10 @@ if __name__ == '__main__':
     print(dataset)
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+    if 'pad_token_id' not in tokenizer.__dict__:
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     print(tokenizer)
+
     import json
     print(json.dumps(dataset['train_sft'][17]))
     print(json.dumps(dataset['train_gen'][17]))

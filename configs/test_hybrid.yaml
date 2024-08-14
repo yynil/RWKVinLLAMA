@@ -4,4 +4,4 @@ RWKV:
   pad_id: 128009
 
 Llama:
-  model_id: /media/yueyulin/x/llama-3.1-8B-Instruct/
+  model_id: /data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/
