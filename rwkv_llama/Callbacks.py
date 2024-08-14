@@ -139,9 +139,9 @@ class TrainerCallback(pl.Callback):
                 trainer.my_wandb.log(lll, step=int(real_step))
             
             if real_step % args.log_every_n_steps == 0 and real_step > 0:
-                print(f'saving trainable to {args.trainable_dir_output}')
+                print(f'saving trainable to {args.output_dir}')
                 print(f"{real_step} {trainer.my_loss:.6f} {math.exp(trainer.my_loss):.4f}  {trainer.current_epoch}, now saving...")
-                output_dir = f"{args.trainable_dir_output}/epoch_{trainer.current_epoch}_step_{real_step}"
+                output_dir = f"{args.output_dir}/epoch_{trainer.current_epoch}_step_{real_step}"
                 save_trainable_parameters(pl_module, output_dir, args.model_file)
                 
 
