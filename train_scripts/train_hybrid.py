@@ -111,6 +111,7 @@ if __name__ == '__main__':
     args.betas = (args.beta1, args.beta2)
     args.kl_weight = config['kl_weight']
     args.ce_weight = config['ce_weight']
+    args.model_file = config['model_file']
     args.real_bsz = args.micro_bsz * args.accumulate_grad_batches*args.num_devices*args.num_nodes
     import time
     args.my_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -173,7 +174,11 @@ if __name__ == '__main__':
         trainer.strategy.config["zero_optimization"]["reduce_bucket_size"] = args.ds_bucket_mb * 1000 * 1000
     
     print(model)
-
+    if args.ckpt_file is not None:
+        dict_set = torch.load(args.ckpt_file)
+        info = model.load_state_dict(dict_set, strict=False)
+        print(f'load model from {args.ckpt_file}, info is {info}')
+        del dict_set
     print("Current device rank: ", trainer.global_rank)
     print("Total number of devices: ", trainer.world_size)
     torch.set_float32_matmul_precision('medium')
