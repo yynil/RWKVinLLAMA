@@ -106,23 +106,32 @@ if __name__ == '__main__':
     args.tiny_att_layer = -999
     args.vocab_size = transformer_model.config.vocab_size
     args.layers = config['RWKV']['layers']
-    args.grap_cp = config['RWKV']['grap_cp']
     args.pad_id = tokenizer.eos_token_id
     args.betas = (args.beta1, args.beta2)
     args.kl_weight = config['kl_weight']
     args.ce_weight = config['ce_weight']
     args.model_file = config['model_file']
     args.real_bsz = args.micro_bsz * args.accumulate_grad_batches*args.num_devices*args.num_nodes
+    args.teacher_client_mode = config['teach_mode']['is_client']
+    args.nccl_file = config['teach_mode']['nccl_file']
+    
     import time
     args.my_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     from hybrid_model import HybridModel
 
 
-
-    teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype)
+    if not args.teacher_client_mode:
+        teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype)
+    else:
+        teacher_model = None
+        with open(args.nccl_file, 'r') as f:
+            print(f'load nccl_id from {args.nccl_file}')
+            import json
+            nccl_id = json.load(f)['nccl_id']
+            args.nccl_id = tuple(nccl_id)
+            print("NCCL ID:", nccl_id)
 
     model = HybridModel(transformer_model,args,teacher_model,tokenizer)
-    print(model)
 
     for name, param in model.named_parameters():
         if not 'block.' in name:
@@ -150,9 +159,7 @@ if __name__ == '__main__':
                                               collate_fn=data_collator)
 
     args.epoch_steps = len(train_dataloader)//(args.num_devices*args.num_nodes)
-    print(tokenizer)
     from pytorch_lightning import Trainer
-    from lightning_utilities.core.rank_zero import rank_zero_info
     precision = 'bf16'
     from Callbacks import TrainerCallback
     trainer = Trainer(accelerator="auto",
@@ -181,6 +188,8 @@ if __name__ == '__main__':
         del dict_set
     print("Current device rank: ", trainer.global_rank)
     print("Total number of devices: ", trainer.world_size)
+    args.world_size = trainer.world_size
+    args.rank = trainer.global_rank
     torch.set_float32_matmul_precision('medium')
     trainer.fit(model, 
                 train_dataloader)

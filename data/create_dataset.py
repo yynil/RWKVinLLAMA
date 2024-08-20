@@ -3,6 +3,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--tokenizer', type=str, default='/media/yueyulin/data_4t/models/tinyLlama-1.1B-Chat-V1.0/')
     parser.add_argument('--output_dir', type=str, default='/media/yueyulin/data_4t/data/ultrachat_200k_ds/')
+    parser.add_argument('--max_len', type=int, default=2048)
     args = parser.parse_args()
     import os
     os.environ['HF_ENDPOINT']='https://hf-mirror.com'
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     print(tokenizer.encode('assistant',add_special_tokens=False))
     print(tokenizer.encode('Yes',add_special_tokens=False))
     print(tokenizer.encode('yes',add_special_tokens=False))
-    max_len = 2048
+    max_len = args.max_len
     
     def tokenize_and_cut(examples):
         inputs_ids = []

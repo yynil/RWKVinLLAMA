@@ -1,67 +1,63 @@
-import ctypes
-import yaml
-from multiprocessing import shared_memory
-import time
-from transformers import AutoModelForCausalLM
 import torch
-import numpy
-from multiprocessing import Process, resource_tracker
-from multiprocessing.shared_memory import SharedMemory
-import time
-import ray
-infere_time = 0.0
-cpy_mem_time = 0.0
-infere_count = 0
+import torch.distributed as dist
+from transformers import AutoModelForCausalLM,AutoTokenizer
+import argparse
+import asyncio
 
-@ray.remote(num_gpus=1)
-class TeacherServer:
-    def __init__(self, model_id,device,dtype):
-        self.model_id = model_id
-        self.device = device
-        self.dtype = dtype
-        print(f'Initializing TeacherServer with model {model_id} on {device} with dtype {dtype}')
-        model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype, device_map={'':'cpu'})
-        model = model.to(device)
-        self.model = model
-        self.model.eval()
-        print(f'Initialized TeacherServer with model {model}')
-    def haha(self):
-        print('haha')
-        return 1
-    
-    def compute_logits(self,input_ids:torch.Tensor)->torch.Tensor:
-        global infere_time
-        global cpy_mem_time
-        global infere_count
-        start = time.time()
-        with torch.no_grad():
-            input_ids = input_ids.to(self.device)
-            attention_mask = torch.ne(input_ids, 0)
-            logits = self.model(input_ids,attention_mask=attention_mask).logits
-        infere_time += time.time()-start
-        infere_count += 1
+async def handle_request(rank, model, input_ids,eos_id):
+    print(f"Rank {rank} processing input")
+    with torch.no_grad():
+        attention_mask = torch.ne(input_ids, eos_id).to(input_ids.device)
+        results = model(input_ids, attention_mask=attention_mask)
+        logits = results.logits
+        await asyncio.sleep(0)
         return logits
+
+async def run(rank, size,model,batch,length,eos_id):
+    
+    # 每个 rank 生成自己的输入数据
+    input_ids = torch.zeros((batch, length), dtype=torch.long).to(0)
+    
+    while True:
+        print(f"Rank {rank} waiting for input")
+        
+        
+        # receive input from client rank
+        dist.recv(input_ids, src=rank)
+        # process input
+        logits = await handle_request(rank, model, input_ids,eos_id)
+        # send output back to client rank
+        print(f'Rank {rank} sending logits,shape is {logits.shape}')
+        dist.send(logits, dst=rank)
+        del logits
+        torch.cuda.empty_cache()
+        
+
+async def main(model_id, size, master_addr, master_port, fn,batch,length,eos_id, backend='nccl'):
+    dist.init_process_group(backend, rank=0, world_size=size, init_method=f'tcp://{master_addr}:{master_port}',group_name='teacher_name')
+    
+    dtype = torch.bfloat16
+    model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype).to(0)
+    model.eval()
+    tasks = []
+    for rank in range(1,size):
+        task = asyncio.create_task(run(rank, size,model,batch,length,eos_id))
+        tasks.append(task)
+        
+    await asyncio.gather(*tasks)
+
 if __name__ == "__main__":
-    # remove_shm_from_resource_tracker()
-    import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='configs/teacher_server.yaml')
+    parser.add_argument('--model_id', type=str, required=True, help='model id')
+    parser.add_argument('--master_addr', type=str, required=True, help='address of the master node')
+    parser.add_argument('--master_port', type=str, required=True, help='port of the master node')
+    parser.add_argument('--batch', type=int, required=True, help='batch size')
+    parser.add_argument('--length', type=int, required=True, help='length of input')
+    parser.add_argument('--size', type=int, required=True, help='number of nodes')
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-            config = yaml.safe_load(file)
-    model_id = config['model_id']
-    device = config['device']
-    dtype = config['dtype']
-    if dtype == 'bfloat16':
-        dtype = torch.bfloat16
-    elif dtype == 'float16':
-        dtype = torch.float16
-    elif dtype == 'float32':
-        dtype = torch.float32
-    else:
-        raise ValueError(f'Invalid dtype: {dtype}')
-    
-    
-    ray.init(namespace=config['name_space'])
-    c = TeacherServer.options(name="teacher").remote(model_id=model_id,device=device,dtype=dtype)
-    input("Press any key to exit...")
+    size = args.size
+    batch = args.batch
+    length = args.length
+    tokenizer = AutoTokenizer.from_pretrained(args.model_id)
+    eos_id = tokenizer.eos_token_id
+    asyncio.run(main(args.model_id, size, args.master_addr, args.master_port, run,batch,length,eos_id))

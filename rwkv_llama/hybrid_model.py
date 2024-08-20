@@ -8,7 +8,9 @@ from torch.nn import functional as F
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 from pytorch_lightning.strategies import DeepSpeedStrategy
-from adam_mini import Adam_mini
+# from adam_mini import Adam_mini
+import cupy as cp
+from cupy.cuda import nccl
 
 
 
@@ -21,9 +23,16 @@ class RWVVDecoderLayer(nn.Module):
         super(RWVVDecoderLayer, self).__init__()
         self.block = Block(args,layer_idx)
         self.layer_idx = layer_idx
+        self.args = args
 
     def forward(self, hidden_states: torch.Tensor, inference_params=None, *args, **kwargs):
-        hidden_states = self.block(hidden_states)
+        # Ensure hidden_states requires gradient
+        hidden_states.requires_grad_(True)
+        if self.args.grad_cp == 1:
+            hidden_states = deepspeed.checkpointing.checkpoint(self.block, hidden_states)
+        else:
+            hidden_states = self.block(hidden_states)
+        # hidden_states = self.block(hidden_states)
         # print(f'forward in {self.layer_idx}')
         # so here is just to be compatible with Transformer
 
@@ -164,7 +173,21 @@ class HybridModel(pl.LightningModule):
             cfg = strategy.config["zero_optimization"]
             return cfg.get("offload_optimizer") or cfg.get("offload_param")
         return False
-
+    def on_fit_start(self):
+        args = self.args
+        if args.teacher_client_mode:
+            print('start to initialize process group')
+            rank = args.rank
+            cp.cuda.Device(rank).use()
+            world_size = args.world_size+1
+            # cp.cuda.Device(args.rank).use()
+            print(f'init process group, rank is {rank} with world size {world_size}, nccl_id is {args.nccl_id}')
+            self.comm = nccl.NcclCommunicator(world_size, args.nccl_id, rank)
+            args.server_rank = args.world_size
+            self.recv_buffer = cp.empty((args.micro_bsz, args.max_seq_length,self.model.config.vocab_size), dtype=cp.float32)
+            print(f'finish init process group, rank is {rank}')
+            
+    
     def training_step(self, batch, batch_idx):
         args = self.args
         teacher_model = self.teacher_model
@@ -172,14 +195,25 @@ class HybridModel(pl.LightningModule):
         input_ids = batch['input_ids']
         labels = batch['labels']
         attention_mask = torch.ne(input_ids, tokenizer.eos_token_id).to(input_ids.device)
-        with torch.no_grad():
-            teacher_outputs = teacher_model(
-                input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
-            teacher_logits = teacher_outputs.logits
+        if args.teacher_client_mode:
+            b,t = input_ids.shape
+            # print(input_ids.dtype)
+            # print(input_ids.shape)
+            self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, cp.cuda.Stream.null.ptr)
+            self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, cp.cuda.Stream.null.ptr)
+            teacher_logits = torch.as_tensor(self.recv_buffer, device=f'cuda:{args.rank}', dtype=torch.float32)
+        else:
+            with torch.no_grad():
+                teacher_outputs = teacher_model(
+                    input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
+                teacher_logits = teacher_outputs.logits
+        # teacher_logits = teacher_logits.detach()
         targets = F.softmax(teacher_logits, dim=-1)
         student_outputs = self.forward(
             input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
         student_logits = student_outputs.logits
+        # Detach student_logits to ensure it does not require gradients
+        # student_logits = student_logits.detach()
         student_cross_entropy_loss = student_outputs.loss
         kl_loss = F.kl_div(F.log_softmax(
             student_logits, dim=-1), targets, reduction='batchmean')
