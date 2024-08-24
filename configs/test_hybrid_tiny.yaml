@@ -1,0 +1,12 @@
+RWKV:
+  layers: [24]
+
+Llama:
+  model_id: /home/yueyulin/model/llama-3.1-8B-Instruct
+
+kl_weight: 0.1
+ce_weight: 1
+model_file: Llama3.18BInstructRWKV8Layers
+teach_mode:
+  is_client: True
+  nccl_file: nccl.txt

@@ -186,7 +186,8 @@ class HybridModel(pl.LightningModule):
             args.server_rank = args.world_size
             self.recv_buffer = cp.empty((args.micro_bsz, args.max_seq_length,self.model.config.vocab_size), dtype=cp.float32)
             print(f'finish init process group, rank is {rank}')
-            
+            if args.is_hidden_align:
+                self.teacher_hidden_states_buffer = cp.empty((args.micro_bsz*self.model.config.num_hidden_layers, args.max_seq_length, self.model.config.hidden_size), dtype=cp.float32)
     
     def training_step(self, batch, batch_idx):
         args = self.args
@@ -201,27 +202,48 @@ class HybridModel(pl.LightningModule):
             # print(input_ids.shape)
             self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, cp.cuda.Stream.null.ptr)
             self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, cp.cuda.Stream.null.ptr)
-            teacher_logits = torch.as_tensor(self.recv_buffer, device=f'cuda:{args.rank}', dtype=torch.float32)
+            teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
+            if args.is_hidden_align:
+                self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, cp.cuda.Stream.null.ptr)
+                teacher_hidden_states = torch.as_tensor(self.teacher_hidden_states_buffer, device=input_ids.device, dtype=torch.float32)#(b*layers,t,hidden_size)
+                # print(f'got teacher hidden states shape is {teacher_hidden_states.shape}, rank is {args.rank}')
         else:
             with torch.no_grad():
                 teacher_outputs = teacher_model(
-                    input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
-                teacher_logits = teacher_outputs.logits
+                    input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
+            teacher_logits = teacher_outputs.logits
+            if args.is_hidden_align:
+                teacher_hidden_states = teacher_outputs.hidden_states    
+                teacher_hidden_states = torch.cat(teacher_hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
+        
         # teacher_logits = teacher_logits.detach()
-        targets = F.softmax(teacher_logits, dim=-1)
         student_outputs = self.forward(
-            input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
-        student_logits = student_outputs.logits
-        # Detach student_logits to ensure it does not require gradients
-        # student_logits = student_logits.detach()
-        student_cross_entropy_loss = student_outputs.loss
-        kl_loss = F.kl_div(F.log_softmax(
-            student_logits, dim=-1), targets, reduction='batchmean')
+            input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
+        if not args.is_hidden_align:
+            targets = F.softmax(teacher_logits, dim=-1)
+            student_logits = student_outputs.logits
+            # Detach student_logits to ensure it does not require gradients
+            # student_logits = student_logits.detach()
+            student_cross_entropy_loss = student_outputs.loss
+            kl_loss = F.kl_div(F.log_softmax(
+                student_logits, dim=-1), targets, reduction='batchmean')
 
-        loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
-        self.log('train_loss', loss)
-        returned_loss = {}
-        returned_loss['loss'] = loss
-        returned_loss['kl_loss'] = kl_loss
-        returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
-        return returned_loss
+            loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
+            self.log('train_loss', loss)
+            returned_loss = {}
+            returned_loss['loss'] = loss
+            returned_loss['kl_loss'] = kl_loss
+            returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
+            return returned_loss
+        else:
+            mask = torch.ne(labels, -100).to(labels.device)
+            mask = mask.unsqueeze(1).unsqueeze(3)#(b,1,t,1)
+            hidden_states = torch.cat(student_outputs.hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
+            hidden_states = hidden_states * mask
+            teacher_hidden_states = teacher_hidden_states * mask
+            # print(f'students hidden shape is {hidden_states.shape}, rank is {args.rank}')
+            # print(f'teachers hidden shape is {teacher_hidden_states.shape}, rank is {args.rank}')
+            loss = F.mse_loss(hidden_states, teacher_hidden_states.to(hidden_states.dtype))
+            self.log('train_loss', loss)
+            return loss
+            

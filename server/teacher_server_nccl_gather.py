@@ -11,20 +11,22 @@ from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor()
 
 
-def handle_request_sync(model, input_ids,eos_id):
-    attention_mask = torch.ne(input_ids, eos_id).to(input_ids.device)
+def handle_request_sync(model, input_ids,eos_id,output_all_hiddens=False):
+    # print(f"Start inference,input_ids shape is {input_ids.shape}, eos_id is {eos_id} input_ids {input_ids},output_all_hiddens is {output_all_hiddens}")  
     with torch.no_grad():
-        results =  model(input_ids, attention_mask=attention_mask)
-    return results.logits
+        results =  model(input_ids,output_hidden_states=output_all_hiddens)
+    # print(f"Finished inference,result logits shape is {results.logits.shape}")
+    return results.logits,results.hidden_states
 
         
 
-def main(model_id,nccl_id, size, batch,length,eos_id):
+def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hiddens=False):
     dtype = torch.bfloat16
-    model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=dtype,device=f'cuda:{size-1}')
+    model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=dtype,device=f'cuda:{device_id}')
+    layers = model.config.num_hidden_layers
     model.eval()
     print(f'init the server with nccl_id {nccl_id}')
-    cp.cuda.Device(size-1).use()
+    cp.cuda.Device(device_id).use()
     comm = nccl.NcclCommunicator(size, nccl_id, size-1)
     print('Server initialized')
     recv_buffer = cp.empty(((size-1)*batch, length), dtype=cp.int64)
@@ -45,27 +47,44 @@ def main(model_id,nccl_id, size, batch,length,eos_id):
             # future.result()
         end = time.time()
         transfer_time += end-start
-        input_ids = torch.as_tensor(recv_buffer, device=f'cuda:{size-1}', dtype=torch.long)
+        input_ids = torch.as_tensor(recv_buffer, device=f'cuda:{device_id}', dtype=torch.long)
         # print(f"Rank {size-1} received input_ids, shape is {input_ids.shape} input_ids dtype is {input_ids.dtype}")
         # print(f'input_ids is {input_ids}')
         start = time.time()
-        logits = handle_request_sync(model, input_ids,eos_id)
+        logits,hidden_states = handle_request_sync(model, input_ids,eos_id,output_all_hiddens=output_all_hiddens)
         end = time.time()
         inference_time += end-start
         start = time.time()
+        # print(f"Rank {size-1} inference time is {end-start}")
         # futures = []
         for i in range(size-1):
-            rank_logits = logits[i*batch:(i+1)*batch]
+            rank_logits = logits[i*batch:(i+1)*batch]#(batch,length,vocab_size)z
             # print(f"Rank {size-1} sending logits to rank {i} rank_logits shape is {rank_logits.shape}")
             # print(f'RANK{i} rank_logits[0]: {rank_logits[0]}')
             rank_data_ptr = rank_logits.data_ptr()
             comm.send(rank_data_ptr, rank_logits.size(0)*rank_logits.size(1)*rank_logits.size(2), nccl.NCCL_FLOAT, i, cp.cuda.Stream.null.ptr)
+            if hidden_states is not None and output_all_hiddens:
+                # print(f"all length of hidden_states is {len(hidden_states)}")
+                rank_hidden_states = [hidden_states[num_layer][i*batch:(i+1)*batch]  for num_layer in range(1,layers+1)]
+                # print(f"Rank {size-1} sending hidden_states to rank {i}")
+                #Since hiddens are list of tensors, we concatenate them to a single tensor and send them back
+                rank_hidden_states = torch.cat(rank_hidden_states,dim=0)#num_layers*batch,length,hidden_size
+                print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
+                rank_hidden_states = rank_hidden_states.to(torch.float32)
+                rank_data_ptr = rank_hidden_states.data_ptr()
+                # print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
+                comm.send(rank_data_ptr, rank_hidden_states.size(0)*rank_hidden_states.size(1)*rank_hidden_states.size(2), nccl.NCCL_FLOAT, i, cp.cuda.Stream.null.ptr)
+                # print(f"Rank {size-1} sent hidden_states to rank {i} hidden_states[-1] is {rank_hidden_states[-1]}")
             # future = executor.submit(comm.send, rank_data_ptr, rank_logits.size(0)*rank_logits.size(1)*rank_logits.size(2), nccl.NCCL_FLOAT, i, cp.cuda.Stream.null.ptr)
             # futures.append(future)
         # for future in futures:
             # future.result()
         end = time.time()
         transfer_time += end-start
+        del logits
+        del hidden_states
+        del input_ids
+        torch.cuda.empty_cache()
         count += 1
         if count % 50 == 0:
             print(f"Rank {size-1} time transfer: {transfer_time/count}, time inference: {inference_time/count}")
@@ -96,7 +115,9 @@ if __name__ == "__main__":
     parser.add_argument('--batch', type=int, required=True, help='batch size')
     parser.add_argument('--length', type=int, required=True, help='length of input')
     parser.add_argument('--size', type=int, required=True, help='number of nodes')
+    parser.add_argument('--output_all_hiddens', action='store_true',default=False, help='return all hiddens')
     parser.add_argument('--nccl_id_file', type=str, default='nccl.txt',help='nccl id file')
+    parser.add_argument('--device_id', type=int, default=0, help='device id')
     args = parser.parse_args()
     
     nccl_id_file = args.nccl_id_file
@@ -111,4 +132,5 @@ if __name__ == "__main__":
     length = args.length
     tokenizer = AutoTokenizer.from_pretrained(args.model_id)
     eos_id = tokenizer.eos_token_id
-    main(args.model_id, nccl_id,size,batch,length,eos_id)
+    device_id = args.device_id
+    main(args.model_id, nccl_id,device_id,size,batch,length,eos_id,output_all_hiddens=args.output_all_hiddens)

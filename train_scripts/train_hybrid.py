@@ -114,6 +114,7 @@ if __name__ == '__main__':
     args.real_bsz = args.micro_bsz * args.accumulate_grad_batches*args.num_devices*args.num_nodes
     args.teacher_client_mode = config['teach_mode']['is_client']
     args.nccl_file = config['teach_mode']['nccl_file']
+    args.is_hidden_align = config['teach_mode']['is_hidden_align']
     
     import time
     args.my_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")

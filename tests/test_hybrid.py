@@ -25,7 +25,7 @@ import yaml
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default='configs/test_hybrid.yaml')
 # args = parser.parse_args()
-config_file = 'configs/test_hybrid.yaml'
+config_file = 'configs/test_hybrid_full_logits.yaml'
 with open(config_file) as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 print(config)
@@ -52,50 +52,73 @@ rwkv_args.tiny_att_layer = -999
 rwkv_args.vocab_size = transformer_model.config.vocab_size
 rwkv_args.dropout = 0
 rwkv_args.layers = config['RWKV']['layers']
-rwkv_args.grap_cp = config['RWKV']['grap_cp']
-rwkv_args.pad_id = config['RWKV']['pad_id']
+rwkv_args.grad_cp = 0
+rwkv_args.is_hidden_align = config['teach_mode']['is_hidden_align']
 from hybrid_model import HybridModel
 
 model = HybridModel(transformer_model,rwkv_args)
 print(model)
-
+del transformer_model
 model = model.to(device=device, dtype=dtype)
 for name, param in model.named_parameters():
     if not 'block.' in name:
         param.requires_grad = False
     print(name, param.shape, param.requires_grad)
-
-
-tokenizer = AutoTokenizer.from_pretrained(config['Llama']['model_id'])
-print(tokenizer.eos_token_id)
-
-teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype)
-teacher_model = teacher_model.to('cuda')
-teacher_model.eval()
-import datasets 
-from datasets import load_from_disk
-ds_dir = '/data/rwkv/data/ultrachat_200k_ds_llama/'
-ds = load_from_disk(ds_dir)
-print(ds)
-input_ids = ds[0]['input_ids']
-labels = ds[0]['labels']
-input_ids = torch.tensor(input_ids,device=device,dtype=torch.long).unsqueeze(0)
-labels = torch.tensor(labels,device=device,dtype=torch.long).unsqueeze(0)
-attention_mask = torch.ne(input_ids, tokenizer.eos_token_id)
-print(input_ids)
+labels = torch.randint(0, rwkv_args.vocab_size, (2, 64), device=device, dtype=torch.long)
+labels[0,20:] = -100
+labels[1,10:] = -100
+input_ids = torch.randint(0, rwkv_args.vocab_size, (2, 64), device=device, dtype=torch.long)
+result = model(input_ids,output_hidden_states=True,use_cache=False)
+print(result.logits)
+print(result.logits.shape)
+print(result.hidden_states)
+print(result.hidden_states[0].shape)
+print(len(result.hidden_states))
+hidden_states = torch.cat(result.hidden_states[1:], dim=0)
+print(hidden_states.shape)
 print(labels)
-print(attention_mask)
-print(input_ids.shape)
-print(labels.shape)
-print(attention_mask.shape)
-logits = model(input_ids,attention_mask=attention_mask).logits
-print(logits)
-print(logits.shape)
+hidden_states = hidden_states.view(2, rwkv_args.n_layer,64, rwkv_args.n_embd)
+mask = torch.ne(labels, -100)
+print(mask)
+# tokenizer = AutoTokenizer.from_pretrained(config['Llama']['model_id'])
+# print(tokenizer.eos_token_id)
+mask = mask.unsqueeze(1).unsqueeze(3)
+print(mask)
+hidden_states = hidden_states * mask
+print(hidden_states)
+layers = [0,2,4,6,8]
+selected_hidden_states = hidden_states[:,layers]
+print(selected_hidden_states)
+print(selected_hidden_states.shape)
+print(hidden_states[:,8])
+print(selected_hidden_states[:,4])
+# teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype)
+# teacher_model = teacher_model.to('cuda')
+# teacher_model.eval()
+# import datasets 
+# from datasets import load_from_disk
+# ds_dir = '/data/rwkv/data/ultrachat_200k_ds_llama/'
+# ds = load_from_disk(ds_dir)
+# print(ds)
+# input_ids = ds[0]['input_ids']
+# labels = ds[0]['labels']
+# input_ids = torch.tensor(input_ids,device=device,dtype=torch.long).unsqueeze(0)
+# labels = torch.tensor(labels,device=device,dtype=torch.long).unsqueeze(0)
+# attention_mask = torch.ne(input_ids, tokenizer.eos_token_id)
+# print(input_ids)
+# print(labels)
+# print(attention_mask)
+# print(input_ids.shape)
+# print(labels.shape)
+# print(attention_mask.shape)
+# logits = model(input_ids,attention_mask=attention_mask).logits
+# print(logits)
+# print(logits.shape)
 
-with torch.no_grad():
-    teacher_logits = teacher_model(input_ids,attention_mask=attention_mask).logits
-    print(teacher_logits)
-    print(teacher_logits.shape)
+# with torch.no_grad():
+#     teacher_logits = teacher_model(input_ids,attention_mask=attention_mask).logits
+#     print(teacher_logits)
+#     print(teacher_logits.shape)
 # data_file = '/media/yueyulin/data_4t/data/ultra_data/ultrachat/input_ids-002.pt'
 # input_ids = torch.load(data_file)
 # input_ids_batch = input_ids[:1]
