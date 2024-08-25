@@ -11,7 +11,8 @@ from pytorch_lightning.strategies import DeepSpeedStrategy
 # from adam_mini import Adam_mini
 import cupy as cp
 from cupy.cuda import nccl
-
+import logging
+from liger_kernel.transformers import LigerFusedLinearCrossEntropyLoss
 
 
 class RWVVDecoderLayer(nn.Module):
@@ -33,7 +34,7 @@ class RWVVDecoderLayer(nn.Module):
         else:
             hidden_states = self.block(hidden_states)
         # hidden_states = self.block(hidden_states)
-        # print(f'forward in {self.layer_idx}')
+        # logging.info(f'forward in {self.layer_idx}')
         # so here is just to be compatible with Transformer
 
         past_key_value = kwargs.get("past_key_value", None)
@@ -129,10 +130,10 @@ class HybridModel(pl.LightningModule):
         lr_1x = sorted(list(lr_1x))
         lr_2x = sorted(list(lr_2x))
         lr_3x = sorted(list(lr_3x))
-        # print('decay', lr_decay)
-        # print('1x', lr_1x)
-        # print('2x', lr_2x)
-        # print('3x', lr_3x)
+        # logging.info('decay', lr_decay)
+        # logging.info('1x', lr_1x)
+        # logging.info('2x', lr_2x)
+        # logging.info('3x', lr_3x)
         param_dict = {n: p for n, p in self.named_parameters()}
         
         if args.layerwise_lr > 0:
@@ -176,19 +177,19 @@ class HybridModel(pl.LightningModule):
     def on_fit_start(self):
         args = self.args
         if args.teacher_client_mode:
-            print('start to initialize process group')
+            logging.info('start to initialize process group')
             rank = args.rank
             cp.cuda.Device(rank).use()
             world_size = args.world_size+1
             # cp.cuda.Device(args.rank).use()
-            print(f'init process group, rank is {rank} with world size {world_size}, nccl_id is {args.nccl_id}')
-            self.comm = nccl.NcclCommunicator(world_size, args.nccl_id, rank)
             args.server_rank = args.world_size
             self.recv_buffer = cp.empty((args.micro_bsz, args.max_seq_length,self.model.config.vocab_size), dtype=cp.float32)
-            print(f'finish init process group, rank is {rank}')
             if args.is_hidden_align:
                 self.teacher_hidden_states_buffer = cp.empty((args.micro_bsz*self.model.config.num_hidden_layers, args.max_seq_length, self.model.config.hidden_size), dtype=cp.float32)
-    
+
+            logging.info(f'init process group, rank is {rank} with world size {world_size}, nccl_id is {args.nccl_id}')
+            self.comm = nccl.NcclCommunicator(world_size, args.nccl_id, rank)
+            logging.info(f'finish init process group, rank is {rank}')
     def training_step(self, batch, batch_idx):
         args = self.args
         teacher_model = self.teacher_model
@@ -198,15 +199,20 @@ class HybridModel(pl.LightningModule):
         attention_mask = torch.ne(input_ids, tokenizer.eos_token_id).to(input_ids.device)
         if args.teacher_client_mode:
             b,t = input_ids.shape
-            # print(input_ids.dtype)
-            # print(input_ids.shape)
+            # logging.info(input_ids.dtype)
+            # logging.info(input_ids.shape)
+            logging.info(f'rank {args.rank} is sending input_ids to server, shape is {input_ids.shape}')
             self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, cp.cuda.Stream.null.ptr)
+            logging.info(f'rank {args.rank} is receiving teacher_logits from server')
             self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, cp.cuda.Stream.null.ptr)
             teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
+            logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
             if args.is_hidden_align:
+                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
                 self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, cp.cuda.Stream.null.ptr)
+                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server, shape is {self.teacher_hidden_states_buffer.shape}')
                 teacher_hidden_states = torch.as_tensor(self.teacher_hidden_states_buffer, device=input_ids.device, dtype=torch.float32)#(b*layers,t,hidden_size)
-                # print(f'got teacher hidden states shape is {teacher_hidden_states.shape}, rank is {args.rank}')
+                logging.info(f'got teacher hidden states shape is {teacher_hidden_states.shape}, rank is {args.rank}')
         else:
             with torch.no_grad():
                 teacher_outputs = teacher_model(
@@ -236,14 +242,16 @@ class HybridModel(pl.LightningModule):
             returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
             return returned_loss
         else:
+            logging.info(f'rank {args.rank} training with hidden states alignment')
             mask = torch.ne(labels, -100).to(labels.device)
             mask = mask.unsqueeze(1).unsqueeze(3)#(b,1,t,1)
             hidden_states = torch.cat(student_outputs.hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
             hidden_states = hidden_states * mask
             teacher_hidden_states = teacher_hidden_states * mask
-            # print(f'students hidden shape is {hidden_states.shape}, rank is {args.rank}')
-            # print(f'teachers hidden shape is {teacher_hidden_states.shape}, rank is {args.rank}')
+            logging.info(f'students hidden shape is {hidden_states.shape}, rank is {args.rank}')
+            logging.info(f'teachers hidden shape is {teacher_hidden_states.shape}, rank is {args.rank}')
             loss = F.mse_loss(hidden_states, teacher_hidden_states.to(hidden_states.dtype))
             self.log('train_loss', loss)
+            logging.info(f'rank {args.rank} finished training with hidden states alignment, loss is {loss}')
             return loss
             

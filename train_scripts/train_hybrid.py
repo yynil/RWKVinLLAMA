@@ -2,6 +2,7 @@ import sys
 import os
 def setup_env():
     parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    sys.path.append(parent_dir)
     rwkv_path = os.path.join(parent_dir, 'rwkv')
     sys.path.append(rwkv_path)
     rwkv_llama_path = os.path.join(parent_dir, 'rwkv_llama')
@@ -24,7 +25,9 @@ from argparse import Namespace
 def create_arg_parser():
     parser = argparse.ArgumentParser(description='MLM trainer')
     parser.add_argument('--config_file', type=str,default='configs/test_hybrid.yaml', help='training config file')
-    parser.add_argument('--train_data', type=str,default='/data/rwkv/data/ultrachat_200k_ds_llama/',help='parquet dicrectory containing the training data')
+    parser.add_argument('--train_data', type=str,help='parquet dicrectory containing the training data')
+    parser.add_argument('--c4_data', type=str,help='c4 data directory')
+    parser.add_argument('--languages', type=str,nargs='+',default=['en','zh'],help='languages to train the model')
     parser.add_argument('--output_dir', type=str, default='/data/rwkv/tmp',help='directory to save the trained model')
     parser.add_argument('--num_epochs', type=int, default=1, help='number of epochs to train the model')
     parser.add_argument('--max_seq_length', type=int, default=512, help='maximum sequence length to train the model')
@@ -89,6 +92,7 @@ if __name__ == '__main__':
                                                             torch_dtype=dtype, device_map={'':'cpu'})
     print(transformer_model.config)
     tokenizer = AutoTokenizer.from_pretrained(config['Llama']['model_id'])
+    tokenizer.pad_token = tokenizer.eos_token
     print(tokenizer.eos_token_id)
 
 
@@ -139,25 +143,38 @@ if __name__ == '__main__':
             param.requires_grad = False
         print(name, param.shape, param.requires_grad)
     import datasets
-    from datasets import load_from_disk
-    ds = load_from_disk(args.train_data)
-    print(ds)
-    def data_collator(features):
-        input_ids = []
-        labels = []
-        for f in features:
-            input_ids.append(f['input_ids'])
-            labels.append(f['labels'])
-        input_ids = torch.tensor(input_ids, dtype=torch.long)
-        labels = torch.tensor(labels, dtype=torch.long)
-        return {'input_ids': input_ids, 'labels': labels}  
-    train_dataloader = torch.utils.data.DataLoader(ds, 
-                                              batch_size=args.micro_bsz,
-                                              shuffle=True, 
-                                              num_workers=4, 
-                                              pin_memory=True, 
-                                              drop_last=True,
-                                              collate_fn=data_collator)
+    if args.train_data is not None:
+        print(f'load train data from {args.train_data}')
+        from datasets import load_from_disk
+        ds = load_from_disk(args.train_data)
+        print(ds)
+        def data_collator(features):
+            input_ids = []
+            labels = []
+            for f in features:
+                input_ids.append(f['input_ids'])
+                labels.append(f['labels'])
+            input_ids = torch.tensor(input_ids, dtype=torch.long)
+            labels = torch.tensor(labels, dtype=torch.long)
+            return {'input_ids': input_ids, 'labels': labels}  
+        train_dataloader = torch.utils.data.DataLoader(ds, 
+                                                batch_size=args.micro_bsz,
+                                                shuffle=True, 
+                                                num_workers=4, 
+                                                pin_memory=True, 
+                                                drop_last=True,
+                                                collate_fn=data_collator)
+        val_dataloader = None
+    elif args.c4_data is not None:
+        print(f'load c4 data from {args.c4_data}')
+        from data.c4_datasets import load_and_interleave_c4,data_collator
+        train_ds = load_and_interleave_c4(args.c4_data, args.languages, split='train')
+        # train_ds = train_ds[:100000]
+        val_ds = load_and_interleave_c4(args.c4_data, args.languages, split='validation')  
+        data_collator = data_collator(tokenizer, max_seq_length=args.max_seq_length)
+        train_dataloader = torch.utils.data.DataLoader(train_ds, batch_size=args.micro_bsz, shuffle=True, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
+        val_dataloader = torch.utils.data.DataLoader(val_ds, batch_size=args.micro_bsz, shuffle=False, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
+        
 
     args.epoch_steps = len(train_dataloader)//(args.num_devices*args.num_nodes)
     from pytorch_lightning import Trainer
@@ -193,4 +210,5 @@ if __name__ == '__main__':
     args.rank = trainer.global_rank
     torch.set_float32_matmul_precision('medium')
     trainer.fit(model, 
-                train_dataloader)
+                train_dataloader,
+                val_dataloader)

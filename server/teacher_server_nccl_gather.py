@@ -12,10 +12,10 @@ executor = ThreadPoolExecutor()
 
 
 def handle_request_sync(model, input_ids,eos_id,output_all_hiddens=False):
-    # print(f"Start inference,input_ids shape is {input_ids.shape}, eos_id is {eos_id} input_ids {input_ids},output_all_hiddens is {output_all_hiddens}")  
+    print(f"Start inference,input_ids shape is {input_ids.shape}, eos_id is {eos_id} input_ids {input_ids},output_all_hiddens is {output_all_hiddens}")  
     with torch.no_grad():
         results =  model(input_ids,output_hidden_states=output_all_hiddens)
-    # print(f"Finished inference,result logits shape is {results.logits.shape}")
+    print(f"Finished inference,result logits shape is {results.logits.shape}")
     return results.logits,results.hidden_states
 
         
@@ -34,21 +34,21 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
     transfer_time = 0
     inference_time = 0
     count = 0
+    stream = cp.cuda.Stream(non_blocking=True)
     while True:
         start = time.time()
         # futures = []
         for i in range(size-1):
-            # print(f"Rank {size-1} start receiving rank {i} data")
+            print(f"Rank {size-1} start receiving rank {i} data")
             rank_recv_buffer = recv_buffer.data.ptr+i*batch*length*8
-            comm.recv(rank_recv_buffer, batch*length, nccl.NCCL_INT64, i, cp.cuda.Stream.null.ptr)
-            # furture = executor.submit(comm.recv, rank_recv_buffer, batch*length, nccl.NCCL_INT64, i, cp.cuda.Stream.null.ptr)
-            # futures.append(furture)
-        # for future in futures:
-            # future.result()
+            comm.recv(rank_recv_buffer, batch*length, nccl.NCCL_INT64, i, stream.ptr)
+            print(f"Rank {size-1} finished receiving rank {i} data")    
+        stream.synchronize()
+
         end = time.time()
         transfer_time += end-start
         input_ids = torch.as_tensor(recv_buffer, device=f'cuda:{device_id}', dtype=torch.long)
-        # print(f"Rank {size-1} received input_ids, shape is {input_ids.shape} input_ids dtype is {input_ids.dtype}")
+        print(f"Rank {size-1} received input_ids, shape is {input_ids.shape} input_ids dtype is {input_ids.dtype}")
         # print(f'input_ids is {input_ids}')
         start = time.time()
         logits,hidden_states = handle_request_sync(model, input_ids,eos_id,output_all_hiddens=output_all_hiddens)
@@ -62,7 +62,7 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
             # print(f"Rank {size-1} sending logits to rank {i} rank_logits shape is {rank_logits.shape}")
             # print(f'RANK{i} rank_logits[0]: {rank_logits[0]}')
             rank_data_ptr = rank_logits.data_ptr()
-            comm.send(rank_data_ptr, rank_logits.size(0)*rank_logits.size(1)*rank_logits.size(2), nccl.NCCL_FLOAT, i, cp.cuda.Stream.null.ptr)
+            comm.send(rank_data_ptr, rank_logits.size(0)*rank_logits.size(1)*rank_logits.size(2), nccl.NCCL_FLOAT, i, stream.ptr)
             if hidden_states is not None and output_all_hiddens:
                 # print(f"all length of hidden_states is {len(hidden_states)}")
                 rank_hidden_states = [hidden_states[num_layer][i*batch:(i+1)*batch]  for num_layer in range(1,layers+1)]
@@ -72,13 +72,9 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
                 print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
                 rank_hidden_states = rank_hidden_states.to(torch.float32)
                 rank_data_ptr = rank_hidden_states.data_ptr()
-                # print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
-                comm.send(rank_data_ptr, rank_hidden_states.size(0)*rank_hidden_states.size(1)*rank_hidden_states.size(2), nccl.NCCL_FLOAT, i, cp.cuda.Stream.null.ptr)
-                # print(f"Rank {size-1} sent hidden_states to rank {i} hidden_states[-1] is {rank_hidden_states[-1]}")
-            # future = executor.submit(comm.send, rank_data_ptr, rank_logits.size(0)*rank_logits.size(1)*rank_logits.size(2), nccl.NCCL_FLOAT, i, cp.cuda.Stream.null.ptr)
-            # futures.append(future)
-        # for future in futures:
-            # future.result()
+                print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
+                comm.send(rank_data_ptr, rank_hidden_states.size(0)*rank_hidden_states.size(1)*rank_hidden_states.size(2), nccl.NCCL_FLOAT, i, stream.ptr)
+        stream.synchronize()
         end = time.time()
         transfer_time += end-start
         del logits
@@ -93,21 +89,7 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
             inference_time = 0
             count = 0
     
-    # threads = []
-    # from threading import Thread
-    # for r in range(size):
-    #     if r != rank:
-    #         thread = Thread(target=fn, args=(comm,r, rank,model,batch,length,eos_id))
-    #         thread.start()
-    #         threads.append(thread)
-    # for thread in threads:
-    # #     thread.join()
-    # tasks = []
-    # for r in range(size):
-    #     if r != rank:
-    #         task = asyncio.create_task(fn(comm,r, rank,model,batch,length,eos_id))
-    #         tasks.append(task)
-    # await asyncio.gather(*tasks)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
