@@ -51,7 +51,7 @@ def create_arg_parser():
     parser.add_argument('--epoch_save', type=int, default=1, help='number of epochs after which the model is saved')
     parser.add_argument('--max_epochs', type=int, default=150, help='maximum number of epochs for the training')
     parser.add_argument('--check_val_every_n_epoch', type=int, default=1, help='number of epochs after which the validation is checked')
-    parser.add_argument('--val_check_interval', type=int, default=100, help='number of epochs after which the validation is checked')
+    parser.add_argument('--val_check_interval', type=int, default=10000, help='number of epochs after which the validation is checked')
     parser.add_argument('--num_sanity_val_steps', type=int, default=0, help='number of validation steps for sanity check at the beginning of training')
     parser.add_argument('--log_every_n_steps', type=int, default=1000, help='number of steps after which the training progress will be logged')
     parser.add_argument('--enable_checkpointing', type=bool, default=False, help='flag to enable checkpointing')
@@ -118,8 +118,10 @@ if __name__ == '__main__':
     args.real_bsz = args.micro_bsz * args.accumulate_grad_batches*args.num_devices*args.num_nodes
     args.teacher_client_mode = config['teach_mode']['is_client']
     args.nccl_file = config['teach_mode']['nccl_file']
+    args.num_groups = config['teach_mode']['num_groups']
     args.is_hidden_align = config['teach_mode']['is_hidden_align']
     
+    assert args.num_devices % args.num_groups == 0
     import time
     args.my_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     from hybrid_model import HybridModel
@@ -129,12 +131,7 @@ if __name__ == '__main__':
         teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype)
     else:
         teacher_model = None
-        with open(args.nccl_file, 'r') as f:
-            print(f'load nccl_id from {args.nccl_file}')
-            import json
-            nccl_id = json.load(f)['nccl_id']
-            args.nccl_id = tuple(nccl_id)
-            print("NCCL ID:", nccl_id)
+        
 
     model = HybridModel(transformer_model,args,teacher_model,tokenizer)
 
@@ -188,7 +185,8 @@ if __name__ == '__main__':
                       logger=False,
                       callbacks=[TrainerCallback(args)],
                       max_epochs=args.max_epochs,
-                      check_val_every_n_epoch=args.check_val_every_n_epoch,
+                      check_val_every_n_epoch=None,
+                      val_check_interval=args.val_check_interval,
                       num_sanity_val_steps=args.num_sanity_val_steps,
                       log_every_n_steps=args.log_every_n_steps,
                       enable_checkpointing=args.enable_checkpointing,
@@ -204,6 +202,7 @@ if __name__ == '__main__':
         info = model.load_state_dict(dict_set, strict=False)
         print(f'load model from {args.ckpt_file}, info is {info}')
         del dict_set
+    model.train()
     print("Current device rank: ", trainer.global_rank)
     print("Total number of devices: ", trainer.world_size)
     args.world_size = trainer.world_size

@@ -7,15 +7,19 @@ import numpy as np
 from cupy.cuda import nccl
 import time
 from concurrent.futures import ThreadPoolExecutor
-
-executor = ThreadPoolExecutor()
-
+import logging
+import os
+logging.basicConfig(
+    level=os.environ.get("LOGLEVEL", "INFO"),
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
 
 def handle_request_sync(model, input_ids,eos_id,output_all_hiddens=False):
-    print(f"Start inference,input_ids shape is {input_ids.shape}, eos_id is {eos_id} input_ids {input_ids},output_all_hiddens is {output_all_hiddens}")  
+    logging.info(f"Start inference,input_ids shape is {input_ids.shape}, eos_id is {eos_id} input_ids {input_ids},output_all_hiddens is {output_all_hiddens}")  
     with torch.no_grad():
         results =  model(input_ids,output_hidden_states=output_all_hiddens)
-    print(f"Finished inference,result logits shape is {results.logits.shape}")
+    logging.info(f"Finished inference,result logits shape is {results.logits.shape}")
     return results.logits,results.hidden_states
 
         
@@ -25,10 +29,10 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
     model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=dtype,device=f'cuda:{device_id}')
     layers = model.config.num_hidden_layers
     model.eval()
-    print(f'init the server with nccl_id {nccl_id}')
+    logging.info(f'init the server with nccl_id {nccl_id}')
     cp.cuda.Device(device_id).use()
     comm = nccl.NcclCommunicator(size, nccl_id, size-1)
-    print('Server initialized')
+    logging.info('Server initialized')
     recv_buffer = cp.empty(((size-1)*batch, length), dtype=cp.int64)
     #receive data from other ranks, run in thread pool
     transfer_time = 0
@@ -39,40 +43,40 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
         start = time.time()
         # futures = []
         for i in range(size-1):
-            print(f"Rank {size-1} start receiving rank {i} data")
+            logging.info(f"Rank {size-1} start receiving rank {i} data")
             rank_recv_buffer = recv_buffer.data.ptr+i*batch*length*8
             comm.recv(rank_recv_buffer, batch*length, nccl.NCCL_INT64, i, stream.ptr)
-            print(f"Rank {size-1} finished receiving rank {i} data")    
+            logging.info(f"Rank {size-1} finished receiving rank {i} data")    
         stream.synchronize()
 
         end = time.time()
         transfer_time += end-start
         input_ids = torch.as_tensor(recv_buffer, device=f'cuda:{device_id}', dtype=torch.long)
-        print(f"Rank {size-1} received input_ids, shape is {input_ids.shape} input_ids dtype is {input_ids.dtype}")
-        # print(f'input_ids is {input_ids}')
+        logging.info(f"Rank {size-1} received input_ids, shape is {input_ids.shape} input_ids dtype is {input_ids.dtype}")
+        # logging.info(f'input_ids is {input_ids}')
         start = time.time()
         logits,hidden_states = handle_request_sync(model, input_ids,eos_id,output_all_hiddens=output_all_hiddens)
         end = time.time()
         inference_time += end-start
         start = time.time()
-        # print(f"Rank {size-1} inference time is {end-start}")
+        # logging.info(f"Rank {size-1} inference time is {end-start}")
         # futures = []
         for i in range(size-1):
             rank_logits = logits[i*batch:(i+1)*batch]#(batch,length,vocab_size)z
-            # print(f"Rank {size-1} sending logits to rank {i} rank_logits shape is {rank_logits.shape}")
-            # print(f'RANK{i} rank_logits[0]: {rank_logits[0]}')
+            # logging.info(f"Rank {size-1} sending logits to rank {i} rank_logits shape is {rank_logits.shape}")
+            # logging.info(f'RANK{i} rank_logits[0]: {rank_logits[0]}')
             rank_data_ptr = rank_logits.data_ptr()
             comm.send(rank_data_ptr, rank_logits.size(0)*rank_logits.size(1)*rank_logits.size(2), nccl.NCCL_FLOAT, i, stream.ptr)
             if hidden_states is not None and output_all_hiddens:
-                # print(f"all length of hidden_states is {len(hidden_states)}")
+                # logging.info(f"all length of hidden_states is {len(hidden_states)}")
                 rank_hidden_states = [hidden_states[num_layer][i*batch:(i+1)*batch]  for num_layer in range(1,layers+1)]
-                # print(f"Rank {size-1} sending hidden_states to rank {i}")
+                # logging.info(f"Rank {size-1} sending hidden_states to rank {i}")
                 #Since hiddens are list of tensors, we concatenate them to a single tensor and send them back
                 rank_hidden_states = torch.cat(rank_hidden_states,dim=0)#num_layers*batch,length,hidden_size
-                print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
+                logging.info(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
                 rank_hidden_states = rank_hidden_states.to(torch.float32)
                 rank_data_ptr = rank_hidden_states.data_ptr()
-                print(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
+                logging.info(f"Rank {size-1} sending hidden_states to rank {i} rank_hidden_states shape is {rank_hidden_states.shape}")
                 comm.send(rank_data_ptr, rank_hidden_states.size(0)*rank_hidden_states.size(1)*rank_hidden_states.size(2), nccl.NCCL_FLOAT, i, stream.ptr)
         stream.synchronize()
         end = time.time()
@@ -83,8 +87,8 @@ def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hidden
         torch.cuda.empty_cache()
         count += 1
         if count % 50 == 0:
-            print(f"Rank {size-1} time transfer: {transfer_time/count}, time inference: {inference_time/count}")
-            print(f"Rank {size-1} Ratio of transfer time to inference time: {transfer_time/inference_time}")
+            logging.info(f"Rank {size-1} time transfer: {transfer_time/count}, time inference: {inference_time/count}")
+            logging.info(f"Rank {size-1} Ratio of transfer time to inference time: {transfer_time/inference_time}")
             transfer_time = 0
             inference_time = 0
             count = 0
