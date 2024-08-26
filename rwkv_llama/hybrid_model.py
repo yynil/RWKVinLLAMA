@@ -215,9 +215,17 @@ class HybridModel(pl.LightningModule):
         input_ids = batch['input_ids']
         labels = batch['labels']
         attention_mask = torch.ne(input_ids, tokenizer.eos_token_id).to(input_ids.device)
+        
+        outputs = self.forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         loss = outputs.loss
+        
+        # 计算perplexity
+        perplexity = torch.exp(loss)
+        
         self.log('val_loss', loss, prog_bar=True)
-        return loss
+        self.log('val_perplexity', perplexity, prog_bar=True)
+        
+        return {'loss': loss, 'perplexity': perplexity}
     
     def training_step(self, batch, batch_idx):
         args = self.args
