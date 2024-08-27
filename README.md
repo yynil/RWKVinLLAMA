@@ -126,3 +126,63 @@ python train_scripts/train_hybrid.py --max_epochs 3 --num_devices 6 --grad_cp 1 
 ```
 
 Since most of the C4 dataset example length is less than 2048, we set the max_seq_length to 2048 to save VRAM.
+
+
+# Hybrid model Inference work flow
+
+In the hybrid model, we combine the RWKV and Llama blocks together.  In order to run the inference in the same pipeline, we need to ensure the RWKV block can faciliate the same Huggingface transformers generate pipeline.
+
+The following is the work flow of the inference happened inside the hybrid models block.
+
+1. Input Ids are converted to embeddings which is also the input to layers of the hybrid model.
+2. If the cache(past_key_values) is not None, then the cache is passed to layers with the embeddings.
+3. If the layer is LlamaDecoderLayer, just call the LlamaDecoderLayer.forward() as usual.
+4. If the layer is RWKV6Block, the RWKV6Block.forward() will get the state from the cache and used to generate the logits and the new state.
+5. Since the https://github.com/huggingface/transformers/blob/main/src/transformers/cache_utils.py#L296 DynamicCache's update function is to append the key,value to the cache, we need to override its behavior. If the state is from RWKV6Block, we need to update the cache with the new state instead of appending the key,value to the cache.
+6. The logits and the new state are returned to the generate function.
+7. After iterating all layers, the logits, hybrid cache combined with key/values and states are returned to the generate function.
+
+```mermaid
+graph TD
+    subgraph I[Input]
+        IDS[Input IDS]
+        C[Cache]
+    end
+    subgraph L[Layers]
+        RWKV0[RWKV Block]
+        Llama0[Llama Block]
+        RWKV1[RWKV Block]
+        Llama1[Llama Block]
+        RWKV2[RWKV Block]
+        Llama2[Llama Block]
+    end
+    subgraph M[Hybrid Model]
+        E[Embedding]
+        L
+        N[Norm]
+    end
+    IDS --> E
+    E --> RWKV0
+    C --> RWKV0
+    RWKV0 --> Llama0
+    Llama0 --> RWKV1
+    RWKV1 --> Llama1
+    Llama1 --> RWKV2
+    RWKV2 --> Llama2
+    C --> Llama2
+    C --> Llama1
+    C --> Llama0
+    C --> RWKV1
+    C --> RWKV2
+    Llama2 --> N
+    subgraph O[Output]
+        OutputLogits[Output Logits]
+        NewCache[New Cache]
+    end
+    N --> OutputLogits
+    C --> NewCache
+```
+
+So we need to :
+1. Add a new cache and override the cache variable in the HybridModel.
+2. Implement the forward function in RWKV6Block to use the cache(a.k.a. state) to generate the hidden states and the new state.

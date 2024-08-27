@@ -17,7 +17,7 @@ def setup_env():
     os.environ['RWKV_T_MAX'] = '4096'
     os.environ["RWKV_MY_TESTING"]='x060'
     os.environ['RWKV_CTXLEN'] = '4096'
-    os.environ['WKV'] = ''
+    os.environ['WKV'] = 'fla'
     os.environ["RWKV_TRAIN_TYPE"] = ''
 setup_env()
 import argparse
@@ -51,9 +51,9 @@ def create_arg_parser():
     parser.add_argument('--epoch_save', type=int, default=1, help='number of epochs after which the model is saved')
     parser.add_argument('--max_epochs', type=int, default=150, help='maximum number of epochs for the training')
     parser.add_argument('--check_val_every_n_epoch', type=int, default=1, help='number of epochs after which the validation is checked')
-    parser.add_argument('--val_check_interval', type=int, default=10000, help='number of epochs after which the validation is checked')
+    parser.add_argument('--val_check_interval', type=int, default=5000, help='number of epochs after which the validation is checked')
     parser.add_argument('--num_sanity_val_steps', type=int, default=0, help='number of validation steps for sanity check at the beginning of training')
-    parser.add_argument('--log_every_n_steps', type=int, default=1000, help='number of steps after which the training progress will be logged')
+    parser.add_argument('--log_every_n_steps', type=int, default=5000, help='number of steps after which the training progress will be logged')
     parser.add_argument('--enable_checkpointing', type=bool, default=False, help='flag to enable checkpointing')
     parser.add_argument('--accumulate_grad_batches', type=int, default=1, help='number of batches to accumulate before performing a backward/update pass')
     parser.add_argument('--gradient_clip_val', type=float, default=1.0, help='maximum gradient norm')

@@ -7,6 +7,7 @@ from torch.nn import functional as F
 
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
+from deepspeed.accelerator import get_accelerator
 from pytorch_lightning.strategies import DeepSpeedStrategy
 # from adam_mini import Adam_mini
 import cupy as cp
@@ -226,7 +227,16 @@ class HybridModel(pl.LightningModule):
         self.log('val_perplexity', perplexity, prog_bar=True)
         
         return {'loss': loss, 'perplexity': perplexity}
-    
+    def on_train_batch_end(self, outputs, batch, batch_idx):
+        # 在每个训练批次结束时清空缓存
+        try:
+            get_accelerator().empty_cache()
+        except AttributeError:
+            # 如果get_accelerator()不可用,尝试使用torch.cuda
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception as e:
+            print(f"无法清空缓存: {e}")
     def training_step(self, batch, batch_idx):
         args = self.args
         teacher_model = self.teacher_model
