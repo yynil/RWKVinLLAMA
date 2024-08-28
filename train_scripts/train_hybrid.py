@@ -177,13 +177,13 @@ if __name__ == '__main__':
     from pytorch_lightning import Trainer
     precision = 'bf16'
     from Callbacks import TrainerCallback
-    from lightning.pytorch.callbacks import ModelCheckpoint
+    from pytorch_lightning.callbacks import ModelCheckpoint
     checkpoint_callback = ModelCheckpoint(dirpath=args.output_dir,
                                           filename='{epoch}-{step}-{train_loss:.4f}',
                                           save_top_k=1,
-                                          every_n_train_steps=5,
-                                          monitor='val_loss',
-                                          mode='min',
+                                          every_n_train_steps=args.log_every_n_steps,
+                                          monitor='step',
+                                          mode='max',
                                           save_last=True,
                                           save_weights_only=True)
     trainer = Trainer(accelerator="auto",
@@ -198,7 +198,7 @@ if __name__ == '__main__':
                       val_check_interval=args.val_check_interval,
                       num_sanity_val_steps=args.num_sanity_val_steps,
                       log_every_n_steps=args.log_every_n_steps,
-                      enable_checkpointing=args.enable_checkpointing,
+                      enable_checkpointing=True,
                       accumulate_grad_batches=args.accumulate_grad_batches,
                       gradient_clip_val=args.gradient_clip_val)
     if "deepspeed" in args.strategy:
