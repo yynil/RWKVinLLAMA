@@ -60,7 +60,6 @@ class RWKVDecoderLayer(nn.Module):
 class HybridModel(pl.LightningModule):
     def __init__(self,transformer_model,rwkv_args,teacher_model = None,tokenizer=None):
         super(HybridModel, self).__init__()
-        self.emb = transformer_model.get_input_embeddings()
         attn_num_heads = transformer_model.config.num_attention_heads
         attn_num_key_value_heads = transformer_model.config.num_key_value_heads
         assert attn_num_heads % attn_num_key_value_heads == 0
@@ -217,7 +216,7 @@ class HybridModel(pl.LightningModule):
         labels = batch['labels']
         attention_mask = torch.ne(input_ids, tokenizer.eos_token_id).to(input_ids.device)
         
-        outputs = self.forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        outputs = self.forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels,use_cache=False)
         loss = outputs.loss
         
         # 计算perplexity

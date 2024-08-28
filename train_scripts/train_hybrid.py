@@ -177,13 +177,22 @@ if __name__ == '__main__':
     from pytorch_lightning import Trainer
     precision = 'bf16'
     from Callbacks import TrainerCallback
+    from lightning.pytorch.callbacks import ModelCheckpoint
+    checkpoint_callback = ModelCheckpoint(dirpath=args.output_dir,
+                                          filename='{epoch}-{step}-{train_loss:.4f}',
+                                          save_top_k=1,
+                                          every_n_train_steps=5,
+                                          monitor='val_loss',
+                                          mode='min',
+                                          save_last=True,
+                                          save_weights_only=True)
     trainer = Trainer(accelerator="auto",
                       strategy=args.strategy,
                       devices=args.num_devices,
                       num_nodes=args.num_nodes,
                       precision=precision,
                       logger=False,
-                      callbacks=[TrainerCallback(args)],
+                      callbacks=[TrainerCallback(args),checkpoint_callback],
                       max_epochs=args.max_epochs,
                       check_val_every_n_epoch=None,
                       val_check_interval=args.val_check_interval,
