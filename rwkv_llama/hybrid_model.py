@@ -225,7 +225,32 @@ class HybridModel(pl.LightningModule):
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_perplexity', perplexity, prog_bar=True)
         
-        return {'loss': loss, 'perplexity': perplexity}
+        if args.teacher_client_mode:
+            #get teacher logits
+            self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, self.stream.ptr)
+            self.stream.synchronize()
+            self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+            self.stream.synchronize()
+            teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
+            logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
+            if args.is_hidden_align:
+                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
+                self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+                self.stream.synchronize()
+                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server, shape is {self.teacher_hidden_states_buffer.shape}')
+        else:
+            with torch.no_grad():
+                teacher_outputs = teacher_model(
+                    input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
+            teacher_logits = teacher_outputs.logits
+            if args.is_hidden_align:
+                teacher_hidden_states = teacher_outputs.hidden_states
+        #calculate teacher's loss and perplexity
+        teacher_loss = F.cross_entropy(teacher_logits, labels)
+        teacher_perplexity = torch.exp(teacher_loss)
+        self.log('val_teacher_loss', teacher_loss, prog_bar=True)
+        self.log('val_teacher_perplexity', teacher_perplexity, prog_bar=True)
+        return {'loss': loss, 'perplexity': perplexity, 'teacher_loss': teacher_loss, 'teacher_perplexity': teacher_perplexity}
     def on_train_batch_end(self, outputs, batch, batch_idx):
         # 在每个训练批次结束时清空缓存
         try:

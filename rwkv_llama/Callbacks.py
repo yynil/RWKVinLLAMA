@@ -183,7 +183,7 @@ class TrainerCallback(pl.Callback):
     ) -> None:
         if trainer.is_global_zero:
             if pl.__version__[0]=='2':
-                self.eval_loss.append(outputs.item())
+                self.eval_loss.append(outputs["loss"].item())
             else:
                 self.eval_loss.append(trainer.my_loss_all.float().mean().item())
 

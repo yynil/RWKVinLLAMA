@@ -28,6 +28,7 @@ def create_arg_parser():
     parser.add_argument('--train_data', type=str,help='parquet dicrectory containing the training data')
     parser.add_argument('--c4_data', type=str,help='c4 data directory')
     parser.add_argument('--languages', type=str,nargs='+',default=['en','zh'],help='languages to train the model')
+    parser.add_argument('--train_datas',type=str,nargs='+',help='train data directories')
     parser.add_argument('--output_dir', type=str, default='/data/rwkv/tmp',help='directory to save the trained model')
     parser.add_argument('--num_epochs', type=int, default=1, help='number of epochs to train the model')
     parser.add_argument('--max_seq_length', type=int, default=512, help='maximum sequence length to train the model')
@@ -171,8 +172,14 @@ if __name__ == '__main__':
         data_collator = data_collator(tokenizer, max_seq_length=args.max_seq_length)
         train_dataloader = torch.utils.data.DataLoader(train_ds, batch_size=args.micro_bsz, shuffle=True, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
         val_dataloader = torch.utils.data.DataLoader(val_ds, batch_size=args.micro_bsz, shuffle=False, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
-        
-
+    elif args.train_datas is not None:
+        print(f'load train data from {args.train_datas}')
+        from data.c4_datasets import data_collator
+        data_collator = data_collator(tokenizer, max_seq_length=args.max_seq_length)
+        from data.multi_source_datasets import load_and_interleave_datasets
+        train_ds, val_ds = load_and_interleave_datasets(args.train_datas)
+        train_dataloader = torch.utils.data.DataLoader(train_ds, batch_size=args.micro_bsz, shuffle=True, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
+        val_dataloader = torch.utils.data.DataLoader(val_ds, batch_size=args.micro_bsz, shuffle=False, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
     args.epoch_steps = len(train_dataloader)//(args.num_devices*args.num_nodes)
     from pytorch_lightning import Trainer
     precision = 'bf16'
