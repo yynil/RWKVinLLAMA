@@ -8,7 +8,7 @@ def load_parquet_dataset(path,split='train', val_size=0.01):
     
     # 分割数据集
     if split == 'train':
-        dataset = dataset['train'].train_test_split(test_size=val_size, shuffle=True)
+        dataset = dataset['train'].train_test_split(test_size=val_size)
         train_dataset = post_process_dataset(dataset['train'], 'train')
         val_dataset = post_process_dataset(dataset['test'], 'validation')
         return train_dataset, val_dataset
@@ -23,7 +23,7 @@ def load_json_gz_dataset(path, split='train', val_size=0.01):
     
     # 分割数据集
     if split == 'train':
-        dataset = dataset['train'].train_test_split(test_size=val_size, shuffle=True)
+        dataset = dataset['train'].train_test_split(test_size=val_size)
         print(f'分割后的数据集：{dataset}')
         train_dataset = post_process_dataset(dataset['train'], 'train')
         val_dataset = post_process_dataset(dataset['test'], 'validation')
@@ -36,7 +36,7 @@ def load_jsonl_dataset(path,split='train',val_size=0.01):
     print(f'loading jsonl dataset from {files}')
     dataset = load_dataset('json', data_files=files)
     if split == 'train':
-        dataset = dataset['train'].train_test_split(test_size=val_size, shuffle=True)
+        dataset = dataset['train'].train_test_split(test_size=val_size)
         train_dataset = post_process_dataset(dataset['train'], 'train')
         val_dataset = post_process_dataset(dataset['test'], 'validation')
         return train_dataset, val_dataset
