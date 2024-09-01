@@ -1,3 +1,25 @@
+import sys
+import os
+def setup_env():
+    parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    sys.path.append(parent_dir)
+    rwkv_path = os.path.join(parent_dir, 'rwkv')
+    sys.path.append(rwkv_path)
+    rwkv_llama_path = os.path.join(parent_dir, 'rwkv_llama')
+    sys.path.append(rwkv_llama_path)
+    print(f'add path: {rwkv_path} to sys.path')
+    print(f'add path: {rwkv_llama_path} to sys.path')
+    os.environ['CUDA_HOME'] = '/usr/local/cuda-12.1'
+    os.environ['RWKV_JIT_ON'] = '0'
+    os.environ['RWKV_T_MAX'] = '4096'
+    os.environ['RWKV_FLOAT_MODE'] = 'bf16'
+    os.environ['RWKV_HEAD_SIZE_A'] = '64'
+    os.environ['RWKV_T_MAX'] = '4096'
+    os.environ["RWKV_MY_TESTING"]='x060'
+    os.environ['RWKV_CTXLEN'] = '4096'
+    os.environ['WKV'] = 'fla'
+    os.environ["RWKV_TRAIN_TYPE"] = ''
+setup_env()
 from einops import rearrange
 from fla.ops.rwkv6 import chunk_rwkv6
 def RUN_CUDA_RWKV6_STATE(B, T, C, H, r, k, v, w, u, s):
@@ -302,4 +324,43 @@ class HybridModel(pl.LightningModule):
         **kwargs,
     ):
         return self.model(input_ids, **kwargs)
-            
+    def load_ckpt(self, ckpt_file):
+        print(f'loading ckpt from {ckpt_file}')
+        info = self.load_state_dict(torch.load(ckpt_file,weights_only=True),strict=False)
+        print(f'loaded ckpt info: {info}')
+def create_rwkv_args(transformer_config, config):
+    from argparse import Namespace
+    args = Namespace()
+    args.layers = config['RWKV']['layers']
+    args.my_pos_emb = 0
+    args.head_size_a = 64
+    args.head_size_divisor = 8
+    args.ctx_len = 4096
+    args.n_layer = transformer_config.num_hidden_layers
+    args.n_embd = transformer_config.hidden_size
+    args.dim_att = transformer_config.hidden_size
+    args.dim_ffn = transformer_config.intermediate_size
+    args.pre_ffn = 0
+    args.head_qk = 0
+    args.tiny_att_dim = 0
+    args.tiny_att_layer = -999
+    args.vocab_size = transformer_config.vocab_size
+    args.pad_id = transformer_config.pad_token_id
+    return args
+         
+if __name__ == '__main__':
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    config_file = "configs/test_hybrid_full_logits_stage_2.yaml"
+    import yaml
+    with open(config_file) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    print(config)
+    model_id = config['Llama']['model_id']
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    transformer_model = AutoModelForCausalLM.from_pretrained(model_id)
+    print(transformer_model)
+    args = create_rwkv_args(transformer_model.config, config)
+    model = HybridModel(transformer_model,args)
+    print(model)
+    ckpt_file = '/data/rwkv/tmp/distill-c4-en-zh/pytorch_model.1400m.bin'
+    model.load_ckpt(ckpt_file)
