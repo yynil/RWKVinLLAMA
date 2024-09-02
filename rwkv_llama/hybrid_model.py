@@ -246,8 +246,18 @@ class HybridModel(pl.LightningModule):
             if args.is_hidden_align:
                 teacher_hidden_states = teacher_outputs.hidden_states
         #calculate teacher's loss and perplexity
-        teacher_loss = F.cross_entropy(teacher_logits, labels)
+        # print(f'teacher_logits shape is {teacher_logits.shape}, labels shape is {labels.shape}')
+
+        # 调整 teacher_logits 和 labels 的形状
+        teacher_logits_reshaped = teacher_logits.view(-1, teacher_logits.size(-1))  # [batch_size * sequence_length, vocab_size]
+        labels_reshaped = labels.view(-1)  # [batch_size * sequence_length]
+
+        # 计算 loss
+        teacher_loss = F.cross_entropy(teacher_logits_reshaped, labels_reshaped)
+
+        # 计算 perplexity
         teacher_perplexity = torch.exp(teacher_loss)
+
         self.log('val_teacher_loss', teacher_loss, prog_bar=True)
         self.log('val_teacher_perplexity', teacher_perplexity, prog_bar=True)
         return {'loss': loss, 'perplexity': perplexity, 'teacher_loss': teacher_loss, 'teacher_perplexity': teacher_perplexity}

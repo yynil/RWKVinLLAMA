@@ -57,7 +57,7 @@ class TrainerCallback(pl.Callback):
             #     print(trainer.global_step, decay_step, decay_total, w_step, progress, lr)
 
         if trainer.global_step < w_step:
-            lr = lr * (0.2 + 0.8 * trainer.global_step / w_step)
+            lr = lr * (0.01 + 0.99 * trainer.global_step / w_step)
 
         if args.weight_decay_final > 0:
             wd_now = args.weight_decay * math.exp(math.log(args.weight_decay_final / args.weight_decay) * progress)
@@ -124,10 +124,10 @@ class TrainerCallback(pl.Callback):
                 # returned_loss['decoder_loss'] = decoder_loss
                 lll = {"loss": trainer.my_loss,  
                         "Gtokens": real_step * token_per_step / 1e9}
-                if 'bow_loss' in outputs:
-                    lll["bow_loss"] = outputs['bow_loss']
-                if 'enc_loss' in outputs:
-                    lll["enc_loss"] = outputs['enc_loss']
+                if 'kl_loss' in outputs:
+                    lll["kl_loss"] = outputs['kl_loss']
+                if 'student_cross_entropy_loss' in outputs:
+                    lll["student_cross_entropy_loss"] = outputs['student_cross_entropy_loss']
                 if 'decoder_loss' in outputs:
                     lll["decoder_loss"] = outputs['decoder_loss']
                 if 'key_match_loss' in outputs:
