@@ -17,8 +17,10 @@ def setup_env():
     os.environ['RWKV_T_MAX'] = '4096'
     os.environ["RWKV_MY_TESTING"]='x060'
     os.environ['RWKV_CTXLEN'] = '4096'
-    os.environ['WKV'] = 'fla'
-    os.environ["RWKV_TRAIN_TYPE"] = ''
+    if 'WKV' not in os.environ:
+        os.environ['WKV'] = ''
+    if "RWKV_TRAIN_TYPE" not in os.environ:
+        os.environ["RWKV_TRAIN_TYPE"] = ''
 setup_env()
 import argparse
 from argparse import Namespace
@@ -29,6 +31,7 @@ def create_arg_parser():
     parser.add_argument('--c4_data', type=str,help='c4 data directory')
     parser.add_argument('--languages', type=str,nargs='+',default=['en','zh'],help='languages to train the model')
     parser.add_argument('--train_datas',type=str,nargs='+',help='train data directories')
+    parser.add_argument('--preprocessed_data',type=str,nargs='+',help='preprocessed data directory')
     parser.add_argument('--output_dir', type=str, default='/data/rwkv/tmp',help='directory to save the trained model')
     parser.add_argument('--num_epochs', type=int, default=1, help='number of epochs to train the model')
     parser.add_argument('--max_seq_length', type=int, default=512, help='maximum sequence length to train the model')
@@ -39,11 +42,11 @@ def create_arg_parser():
     parser.add_argument('--grad_cp', type=int, default=0, help='gradient checkpoint in the model')
     parser.add_argument('--save_per_batches', type=int, default=10000, help='number of batches to save the model')
     parser.add_argument('--my_exit', type=int, default=300, help='exit condition in the model')
-    parser.add_argument('--weight_decay', type=float, default=0.001, help='weight decay in the model')
+    parser.add_argument('--weight_decay', type=float, default=0.1, help='weight decay in the model')
     parser.add_argument('--lr_init', type=float, default=6e-4, help='initial learning rate in the model')
     parser.add_argument('--lr_final', type=float, default=1e-5, help='final learning rate in the model')
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 parameter in the Adam optimizer')
-    parser.add_argument('--beta2', type=float, default=0.99, help='beta2 parameter in the Adam optimizer')
+    parser.add_argument('--beta2', type=float, default=0.95, help='beta2 parameter in the Adam optimizer')
     parser.add_argument('--layerwise_lr', type=float, nargs='+', default=1, help='layerwise learning rate in the model')
     parser.add_argument('--adam_eps', type=float, default=1e-8, help='epsilon parameter in the Adam optimizer')
     parser.add_argument('--warmup_steps', type=int, default=50, help='warmup steps in the model')
@@ -180,6 +183,19 @@ if __name__ == '__main__':
         train_ds, val_ds = load_and_interleave_datasets(args.train_datas)
         train_dataloader = torch.utils.data.DataLoader(train_ds, batch_size=args.micro_bsz, shuffle=True, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
         val_dataloader = torch.utils.data.DataLoader(val_ds, batch_size=args.micro_bsz, shuffle=False, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
+    elif args.preprocessed_data is not None:
+        print(f'load preprocessed data from {args.preprocessed_data}')
+        from data.multi_source_datasets import data_collator
+        from functools import partial
+        data_collator = partial(data_collator, max_seq_length=args.max_seq_length)
+        train_dir = args.preprocessed_data[0]
+        val_dir = args.preprocessed_data[1]
+        train_ds = datasets.load_from_disk(train_dir)
+        val_ds = datasets.load_from_disk(val_dir)
+        train_dataloader = torch.utils.data.DataLoader(train_ds, batch_size=args.micro_bsz, shuffle=True, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)
+        val_dataloader = torch.utils.data.DataLoader(val_ds, batch_size=args.micro_bsz, shuffle=False, num_workers=4, pin_memory=True, drop_last=True, collate_fn=data_collator)    
+        print(f'load preprocessed data from {args.preprocessed_data} done')
+        
     args.epoch_steps = len(train_dataloader)//(args.num_devices*args.num_nodes)
     from pytorch_lightning import Trainer
     precision = 'bf16'

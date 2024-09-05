@@ -65,7 +65,18 @@ class TrainerCallback(pl.Callback):
             wd_now = args.weight_decay
 
 
-
+        for param_group in trainer.optimizers[0].param_groups:
+            if param_group["weight_decay"] > 0:
+                param_group["weight_decay"] = wd_now
+            if args.layerwise_lr > 0:
+                param_group["lr"] = lr * param_group["my_lr_scale"]
+                # print(param_group["lr"], param_group["my_lr_scale"])
+            else:
+                param_group["lr"] = lr
+                
+        trainer.my_lr = lr
+        trainer.my_wd = wd_now
+                
         # rank_zero_info(f"{real_step} {lr}")
 
         if trainer.is_global_zero:

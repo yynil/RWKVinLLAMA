@@ -310,13 +310,27 @@ class HybridModel(pl.LightningModule):
         student_outputs = self.forward(
             input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
         if not args.is_hidden_align:
+            # 假设 labels 是输入的真实标签
             targets = F.softmax(teacher_logits, dim=-1)
             student_logits = student_outputs.logits
-            # Detach student_logits to ensure it does not require gradients
-            # student_logits = student_logits.detach()
             student_cross_entropy_loss = student_outputs.loss
-            kl_loss = F.kl_div(F.log_softmax(
-                student_logits, dim=-1), targets, reduction='batchmean')
+
+            # 创建一个掩码，标记不是 -100 的位置
+            mask = (labels != -100).float()
+
+            # 计算 log_softmax，但只在非 -100 的位置
+            log_probs_student = F.log_softmax(student_logits, dim=-1) * mask.unsqueeze(-1)
+            probs_teacher = targets * mask.unsqueeze(-1)
+
+            # 计算 KL 散度，忽略 -100 的位置
+            kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
+            kl_div = kl_div.sum(dim=-1)  # 在词汇表维度上求和
+
+            # 计算非 -100 标记的数量
+            num_valid_elements = mask.sum()
+
+            # 计算平均 KL 散度，只考虑非 -100 的位置
+            kl_loss = kl_div.sum() / num_valid_elements
 
             loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
             self.log('train_loss', loss)

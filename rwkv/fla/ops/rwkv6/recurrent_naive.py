@@ -36,7 +36,7 @@ def naive_recurrent_rwkv6(
         v_i = v[:, :, i, :]
         w_i = w[:, :, i].exp()
         kv_i = k_i[..., None] * v_i[..., None, :]
-        o_i = (h + u[None, ..., None] * kv_i) * q_i[..., None]
+        o_i = (h + u[..., None] * kv_i) * q_i[..., None]
         o[:, :, i] = o_i.sum(-2)
         h = h * w_i[..., None] + kv_i
     ht = h if output_final_state else None
@@ -44,7 +44,7 @@ def naive_recurrent_rwkv6(
 
 
 @torch.no_grad
-@torch.jit.script
+# @torch.jit.script
 def naive_recurrent_rwkv6_bwd(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -88,11 +88,11 @@ def naive_recurrent_rwkv6_bwd(
         k_i = k[:, :, i]
         v_i = v[:, :, i]
         du_i = (d_kv_i * k_i[..., None] * v_i[..., None, :]).sum(-1)
-        du += du_i.sum(0)
+        du += du_i
         dk_i = (dh * v_i[..., None, :]).sum(-1)
         dk_aux[:, :, i] = dk_i
-        dk_i += (d_kv_i * u[None, ..., None] * v_i[..., None, :]).sum(-1)
-        dv_i = (d_kv_i * u[None, ..., None] * k_i[..., None]).sum(-2)
+        dk_i += (d_kv_i * u[..., None] * v_i[..., None, :]).sum(-1)
+        dv_i = (d_kv_i * u[..., None] * k_i[..., None]).sum(-2)
         dv_i += (dh * k_i[..., None]).sum(-2)
 
         dk[:, :, i] = dk_i
@@ -113,8 +113,10 @@ class NativeRecurrentRWKV6Function(torch.autograd.Function):
     @autocast_custom_fwd
     def forward(ctx, q, k, v, w, u, scale, initial_state, output_final_state: bool = False, training: bool = True):
         o, ht = naive_recurrent_rwkv6(q, k, v, w, u, scale, initial_state, output_final_state)
+        if initial_state is not None:
+            initial_state = initial_state.clone()
         if training:
-            ctx.save_for_backward(q, k, v, w, u, o, initial_state.clone())
+            ctx.save_for_backward(q, k, v, w, u, o, initial_state)
         return o, ht
 
     @staticmethod
@@ -123,6 +125,7 @@ class NativeRecurrentRWKV6Function(torch.autograd.Function):
     def backward(ctx, do, dht):
         q, k, v, w, u, o, initial_state = ctx.saved_tensors
         dq, dk, dv, dw, du, dh = naive_recurrent_rwkv6_bwd(q, k, v, w, u, o, do, initial_state)
+        dh = None if initial_state is None else dh
         return dq, dk, dv, dw, du, None, dh, None, None
 
 
@@ -149,7 +152,7 @@ def native_recurrent_rwkv6(
         w (torch.Tensor):
             data-dependent decays of shape `(B, H, T, K)` in log space! Alias: g.
         u (torch.Tensor):
-            bonus of shape `(H, K)`
+            bonus of shape `(H, K)` or `(B, H, K)` for each head.
         scale (Optional[int]):
             Scale factor for the RWKV6 attention scores.
             If not provided, it will default to `1 / sqrt(K)`. Default: `None`.
@@ -160,6 +163,8 @@ def native_recurrent_rwkv6(
     """
     if scale == -1:
         scale = r.shape[-1] ** -0.5
+    if u.dim() == 2:
+        u = torch.broadcast_to(u.unsqueeze(0), (r.shape[0], *u.shape))
     o, final_state = NativeRecurrentRWKV6Function.apply(r, k, v, w, u, scale, initial_state, output_final_state, training)
 
     return o, final_state
@@ -174,11 +179,12 @@ if __name__ == "__main__":
     D = 64
     dtype = torch.float
     require_grad = True
+    torch.manual_seed(42)
     q = (torch.randn(B, H, L, D).to(device).to(dtype)).requires_grad_(require_grad)
     k = (torch.randn(B, H, L, D).to(device).to(dtype)).requires_grad_(require_grad)
     v = torch.randn(B, H, L, D).to(device).to(dtype).requires_grad_(require_grad)
     w = torch.nn.functional.logsigmoid(torch.randn(B, H, L, D)).to(device).to(dtype).requires_grad_(require_grad)
-    u = (torch.randn(H, D).to(device).to(dtype)).requires_grad_(require_grad)
+    u = (torch.randn(B, H, D).to(device).to(dtype)).requires_grad_(require_grad)
     do = torch.rand_like(v).to(device)
     h = torch.randn(B, H, D, D, device=device, dtype=torch.float32, requires_grad=True)
     o, _ = naive_recurrent_rwkv6(q, k, v, w, u, scale=1.0, initial_state=h)
