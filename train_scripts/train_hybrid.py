@@ -203,8 +203,10 @@ if __name__ == '__main__':
     from pytorch_lightning.callbacks import ModelCheckpoint
     checkpoint_callback = ModelCheckpoint(dirpath=args.output_dir,
                                           filename='{epoch}-{step}-{train_loss:.4f}',
-                                          save_top_k=1,
+                                          save_top_k=2,
                                           every_n_train_steps=args.log_every_n_steps,
+                                          save_on_train_epoch_end=True,
+                                        #   every_n_epochs=1,
                                           monitor='step',
                                           mode='max',
                                           save_last=True,

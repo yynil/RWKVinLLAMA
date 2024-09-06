@@ -11,6 +11,7 @@ LR_INIT=1e-4
 LR_FINAL=5e-4
 DROPOUT=0.01
 LOG_EVERY_N_STEPS=20000
+OUTPUT_ALL_HIDDENS=“”
 
 # 新增的默认路径前缀
 TRAIN_PREFIX="/home/rwkv/preprocessed_"
@@ -20,7 +21,7 @@ CONFIG_FILE="configs/test_hybrid_full_logits_stage_2.yaml"
 CKPT_FILE="/data/rwkv/tmp/distill-c4-en-zh/pytorch_model.1400m.bin"
 
 # 解析命名参数
-while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:" opt; do
+while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:h:" opt; do
   case $opt in
     m) MIN="$OPTARG"
     ;;
@@ -52,6 +53,8 @@ while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:" opt; do
     ;;
     k) CKPT_FILE="$OPTARG"
     ;;
+    h) OUTPUT_ALL_HIDDENS="--output_all_hiddens"
+    ;;
     \?) echo "无效的选项 -$OPTARG" >&2
     exit 1
     ;;
@@ -72,7 +75,7 @@ echo "BASE_DIR_VAL=$BASE_DIR_VAL"
 echo "OUTPUT_DIR=$OUTPUT_DIR"
 echo "CONFIG_FILE=$CONFIG_FILE"
 echo "CKPT_FILE=$CKPT_FILE"
-
+echo "OUTPUT_ALL_HIDDENS=$OUTPUT_ALL_HIDDENS"
 # echo "启动教师服务器"
 python server/teacher_server_nccl_gather.py --model_id /data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/ --batch $BS --length $MAX --size 4 --device_id 0 --nccl_id_file nccl.txt_0 &
 python server/teacher_server_nccl_gather.py --model_id /data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/ --batch $BS --length $MAX --size 4 --device_id 7 --nccl_id_file nccl.txt_1 &
