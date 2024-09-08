@@ -208,10 +208,9 @@ class Block(nn.Module):
             H =  args.dim_att // args.head_size_a
             device = x.device
             dtype = x.dtype
-            wkv_states = torch.empty((B, H, C//H, C//H),
+            wkv_states = torch.zeros((B, H, C//H, C//H),
                                  device=device,
                                  dtype=dtype)
-            shift_states = torch.empty((2, B, C), device=device, dtype=dtype)
             time_state = TimeMixState(None, wkv_states)
             channel_state = ChannelMixState(None)
             last_state = BlockState(time_state,channel_state)
