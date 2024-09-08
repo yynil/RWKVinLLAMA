@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional, Union
 from transformers.cache_utils import Cache, DynamicCache
 import torch
 ######state
@@ -52,16 +52,39 @@ class BlockStateList:
         self.shift_states[layer, 1] = state.channel_mix_state.shift_state
 
 class HybridCache(DynamicCache):
+    def __init__(self) -> None:
+        super().__init__()
+        self.rwkv_layers = set()
     def update(self, 
-               key_states, 
-               value_states, 
-               layer_idx, 
-               cache_kwargs):
-        # print("来自 HybridCache: update 方法被调用")
+               key_states: Union[int,torch.Tensor], 
+               value_states: Union[torch.Tensor,BlockState], 
+               layer_idx :int, 
+               cache_kwargs: Optional[Dict[str, Any]] = None):
+        if isinstance(key_states,int) and not isinstance(value_states, torch.Tensor):
+            self.rwkv_layers.add(layer_idx)
+            # 如果该 layer_idx 的缓存为空，则创建一个新的列表
+            if layer_idx >= len(self.key_cache):
+                self.key_cache.append([])
+                self.value_cache.append([])
+            
+            # 如果该 layer_idx 的第 0 个状态是空，则插入一个新的状态
+            if len(self.key_cache[layer_idx]) == 0:
+                self.key_cache[layer_idx].append(key_states)
+                self.value_cache[layer_idx].append(value_states)
+            else:
+                # 如果不是空，则覆盖第 0 个状态
+                self.key_cache[layer_idx][0] = self.key_cache[layer_idx][0]+key_states
+                self.value_cache[layer_idx][0] = value_states
+            
+            return key_states,value_states
+        
+        # 对于其他情况，使用原有的更新逻辑
         return super().update(key_states, value_states, layer_idx, cache_kwargs)
     
     def get_seq_length(self, layer_idx: Optional[int] = 0):
         # print("来自 HybridCache: get_seq_length 方法被调用")
+        if layer_idx in self.rwkv_layers:
+            return self.key_cache[layer_idx][0]
         return super().get_seq_length(layer_idx)
     
     def get_max_length(self):
@@ -74,4 +97,6 @@ class HybridCache(DynamicCache):
     
     def __getitem__(self, item):
         # print("来自 HybridCache: __getitem__ 方法被调用")
+        if item in self.rwkv_layers:
+            return self.value_cache[item]
         return super().__getitem__(item)

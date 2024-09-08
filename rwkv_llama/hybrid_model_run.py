@@ -31,8 +31,7 @@ def RUN_CUDA_RWKV6_STATE(B, T, C, H, r, k, v, w, u, s):
     x = rearrange(o, 'b h l d -> b l (h d)')
     return x, state
 import torch
-from utilities import TimeMixState, ChannelMixState, BlockState, BlockStateList
-import pytorch_lightning as pl
+from utilities import TimeMixState, ChannelMixState, BlockState
 import torch.nn as nn
 from torch.nn import functional as F
 from typing import Optional, Tuple
@@ -107,7 +106,10 @@ class RWKV_Tmix_x060_infctx(nn.Module):
 
     def jit_func(self, x, shift_state):
         B, T, C = x.size()
-        xx = torch.concat((shift_state.unsqueeze(1), x[:, :-1]), dim=1) - x
+        if shift_state is not None:
+            xx = torch.concat((shift_state.unsqueeze(1), x[:, :-1]), dim=1) - x
+        else:
+            xx = self.time_shift(x) - x
 
         xxx = x + xx * self.time_maa_x
         xxx = torch.tanh(xxx @ self.time_maa_w1).view(B*T, 5, -1).transpose(0, 1)
@@ -168,7 +170,10 @@ class RWKV_CMix_x060_infctx(nn.Module):
         self.value = nn.Linear(args.dim_ffn, args.n_embd, bias=False)
 
     def forward(self, x, last_state: ChannelMixState):
-        xx = torch.concat((last_state.shift_state.unsqueeze(1), x[:, :-1]), dim=1) - x
+        if last_state.shift_state is not None:
+            xx = torch.concat((last_state.shift_state.unsqueeze(1), x[:, :-1]), dim=1) - x
+        else:
+            xx = self.time_shift(x) - x
         xk = x + xx * self.time_maa_k
         xr = x + xx * self.time_maa_r
 
@@ -193,12 +198,23 @@ class Block(nn.Module):
 
         self.ffn = RWKV_CMix_x060_infctx(args, layer_id)
         
-    def forward(self, x, last_state: BlockState, x_emb=None):
+    def forward(self, x, last_state: BlockState = None, x_emb=None):
         args = self.args
         B, T, C = x.size()
         if self.layer_id == 0:
             x = self.ln0(x)
-
+        if last_state is None:
+            #create the time_mix_state and channel_mix_state for initial prefill
+            H =  args.dim_att // args.head_size_a
+            device = x.device
+            dtype = x.dtype
+            wkv_states = torch.empty((B, H, C//H, C//H),
+                                 device=device,
+                                 dtype=dtype)
+            shift_states = torch.empty((2, B, C), device=device, dtype=dtype)
+            time_state = TimeMixState(None, wkv_states)
+            channel_state = ChannelMixState(None)
+            last_state = BlockState(time_state,channel_state)
         if self.layer_id == 0 and args.pre_ffn > 0:
             x = x + self.ffnPre(self.ln1(x))
         else:
@@ -223,29 +239,35 @@ class RWKVDecoderLayer(nn.Module):
                 hidden_states: torch.Tensor, 
                 past_key_value: Optional[Cache] = None,
         use_cache: Optional[bool] = False, 
+        output_attentions: Optional[bool] = False, 
         *args, 
         **kwargs):
         # Ensure hidden_states requires gradient
-        hidden_states = self.block(hidden_states)
+        _,T,_ = hidden_states.shape
+        if past_key_value is not None:
+            if len(past_key_value) <= self.layer_idx:
+                last_state = None
+            else:
+                last_state = past_key_value[self.layer_idx][0]
+        hidden_states,states= self.block(hidden_states,last_state)
         # hidden_states = self.block(hidden_states)
         # logging.info(f'forward in {self.layer_idx}')
         # so here is just to be compatible with Transformer
 
-        past_key_value = kwargs.get("past_key_value", None)
+        # past_key_value = kwargs.get("past_key_value", None)
 
         if past_key_value is not None:
-            dummy_keys = torch.ones(
-                1, 1, hidden_states.size(1), 1, device=hidden_states.device, dtype=hidden_states.dtype
-            )
-            dummy_values = torch.ones(
-                1, 1, hidden_states.size(1), 1, device=hidden_states.device, dtype=hidden_states.dtype
-            )
-            # Update kv cache with dummy values
-            past_key_value.update(dummy_keys, dummy_values, self.layer_idx)
+            keys = T
+            values = states
+            past_key_value.update(keys, values, self.layer_idx)
+        outputs = (hidden_states,)
+        if output_attentions :
+            outputs += (None,)
+        if use_cache:
+            outputs += (past_key_value,)
+        return outputs
 
-        return (hidden_states, None, past_key_value)
-
-class HybridModel(pl.LightningModule):
+class HybridModel(nn.Module):
     def __init__(self,transformer_model,rwkv_args):
         super(HybridModel, self).__init__()
         attn_num_heads = transformer_model.config.num_attention_heads
@@ -254,12 +276,12 @@ class HybridModel(pl.LightningModule):
         n_share = attn_num_heads // attn_num_key_value_heads
         def init_block_params(rwkv_args,layer_idx,llama_layer):
             decoder = RWKVDecoderLayer(rwkv_args,layer_idx)
-            decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
-            decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
-            decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
-            decoder.block.att.output.weight.data = llama_layer.self_attn.o_proj.weight.data
-            decoder.block.ffn.key.weight.data = llama_layer.mlp.up_proj.weight.data
-            decoder.block.ffn.value.weight.data = llama_layer.mlp.down_proj.weight.data
+            # decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
+            # decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
+            # decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
+            # decoder.block.att.output.weight.data = llama_layer.self_attn.o_proj.weight.data
+            # decoder.block.ffn.key.weight.data = llama_layer.mlp.up_proj.weight.data
+            # decoder.block.ffn.value.weight.data = llama_layer.mlp.down_proj.weight.data
             return decoder
         for layer_idx in range(transformer_model.config.num_hidden_layers):
             if layer_idx in rwkv_args.layers:

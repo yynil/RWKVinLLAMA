@@ -17,18 +17,22 @@ from rwkv_llama.utilities import HybridCache
 # 检查CUDA是否可用
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"使用设备: {device}")
-
-# 设置模型路径
-model_id = "/home/yueyulin/model/llama-3.1-8B-Instruct/"
-
-# 加载tokenizer和模型
+from transformers import AutoModelForCausalLM, AutoTokenizer
+config_file = "configs/test_hybrid_full_logits_stage_2.yaml"
+import yaml
+with open(config_file) as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+print(config)
+model_id = config['Llama']['model_id']
 tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(
-    model_id,
-    torch_dtype=torch.bfloat16,  # 使用FP16精度
-    device_map="auto"  # 自动选择可用的GPU
-)
-
+transformer_model = AutoModelForCausalLM.from_pretrained(model_id)
+print(transformer_model)
+from hybrid_model_run import create_rwkv_args,HybridModel
+args = create_rwkv_args(transformer_model.config, config)
+model = HybridModel(transformer_model,args)
+print(model)
+ckpt_file = '/home/yueyulin/model/hybrid/hybrid_model_512_15k.pt'
+model.load_ckpt(ckpt_file)
 # 创建HybridCache实例
 cache = HybridCache()
 
@@ -37,9 +41,10 @@ input_text = "User: 请为我编写一个 Python 程序，输入两个数字，�
 input_ids = tokenizer(input_text, return_tensors="pt").to(device)
 print(input_ids)
 
+model = model.to(dtype=torch.bfloat16,device='cuda')
 # 使用模型生成输出,同时使用HybridCache
 with torch.no_grad():
-    output = model.generate(
+    output = model.model.generate(
         input_ids = input_ids['input_ids'],
         attention_mask = input_ids['attention_mask'],
         max_length=500,
