@@ -208,11 +208,17 @@ class Block(nn.Module):
             H =  args.dim_att // args.head_size_a
             device = x.device
             dtype = x.dtype
-            wkv_states = torch.zeros((B, H, C//H, C//H),
+            wkv_states = torch.empty((B, H, C//H, C//H),
                                  device=device,
                                  dtype=dtype)
-            time_state = TimeMixState(None, wkv_states)
-            channel_state = ChannelMixState(None)
+            shift_states = torch.empty((2,B,C),
+                                 device=device,
+                                 dtype=dtype)
+            wkv_states[:] = 0
+            shift_states[:] = 0
+            time_state = TimeMixState(shift_states[0], wkv_states)
+            print(wkv_states)
+            channel_state = ChannelMixState(shift_states[1])
             last_state = BlockState(time_state,channel_state)
         if self.layer_id == 0 and args.pre_ffn > 0:
             x = x + self.ffnPre(self.ln1(x))
@@ -221,8 +227,9 @@ class Block(nn.Module):
             x = x + att_out
         ffn_out, fnn_state = self.ffn(self.ln2(x), last_state.channel_mix_state)
         x = x + ffn_out
-
-        return x, BlockState(att_state, fnn_state)
+        last_state.time_mix_state = att_state
+        last_state.channel_mix_state = fnn_state
+        return x, last_state
 class RWKVDecoderLayer(nn.Module):
     def __init__(
         self,
