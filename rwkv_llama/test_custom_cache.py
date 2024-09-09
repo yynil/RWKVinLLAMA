@@ -33,7 +33,7 @@ model = AutoModelForCausalLM.from_pretrained(
 cache = HybridCache()
 
 # 准备输入
-input_text = "User: 请为我编写一个 Python 程序，输入两个数字，计算他们每个数字和集合平均值的差值。\nAssistant: 好的，"
+input_text = "In a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 input_ids = tokenizer(input_text, return_tensors="pt").to(device)
 print(input_ids)
 

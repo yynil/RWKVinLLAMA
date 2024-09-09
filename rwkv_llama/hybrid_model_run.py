@@ -21,15 +21,16 @@ def setup_env():
     os.environ["RWKV_TRAIN_TYPE"] = ''
 setup_env()
 from einops import rearrange
-from fla.ops.rwkv6 import chunk_rwkv6
+from fla.ops.rwkv6 import chunk_rwkv6,fused_recurrent_rwkv6
 def RUN_CUDA_RWKV6_STATE(B, T, C, H, r, k, v, w, u, s):
+    dtype = r.dtype
     r = rearrange(r, 'b l (h d) -> b h l d', h = H)
     k = rearrange(k, 'b l (h d) -> b h l d', h = H)
     v = rearrange(v, 'b l (h d) -> b h l d', h = H)
     w = rearrange(-torch.exp(w), 'b l (h d) -> b h l d', h = H)
-    o, state = chunk_rwkv6(r, k, v, w, u=u, scale=1., initial_state=s, output_final_state=True)
+    o, state = chunk_rwkv6(r, k, v, w, u=u, scale=1., initial_state=s, output_final_state=True,training=False)
     x = rearrange(o, 'b h l d -> b l (h d)')
-    return x, state
+    return x.to(dtype), state.to(dtype)
 import torch
 from utilities import TimeMixState, ChannelMixState, BlockState
 import torch.nn as nn
@@ -146,7 +147,7 @@ class RWKV_Tmix_x060_infctx(nn.Module):
         shift_state = last_state.shift_state
         r, k, v, g, w, lx = self.jit_func(x, shift_state)
         ######
-        wkv_state = last_state.wkv_state.clone().contiguous()
+        wkv_state = last_state.wkv_state
         x, wkv_state = RUN_CUDA_RWKV6_STATE(B, T, C, H, r, k, v, w, u=self.time_faaaa, s=wkv_state)
         return self.jit_func_2(x, g, TimeMixState(lx, wkv_state))
 
@@ -204,7 +205,6 @@ class Block(nn.Module):
         if self.layer_id == 0:
             x = self.ln0(x)
         if last_state is None:
-            #create the time_mix_state and channel_mix_state for initial prefill
             H =  args.dim_att // args.head_size_a
             device = x.device
             dtype = x.dtype
@@ -217,7 +217,7 @@ class Block(nn.Module):
             wkv_states[:] = 0
             shift_states[:] = 0
             time_state = TimeMixState(shift_states[0], wkv_states)
-            print(wkv_states)
+            # print(wkv_states)
             channel_state = ChannelMixState(shift_states[1])
             last_state = BlockState(time_state,channel_state)
         if self.layer_id == 0 and args.pre_ffn > 0:
