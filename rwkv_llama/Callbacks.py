@@ -197,7 +197,17 @@ class TrainerCallback(pl.Callback):
                 self.eval_loss.append(outputs["loss"].item())
             else:
                 self.eval_loss.append(trainer.my_loss_all.float().mean().item())
-
+        
+         # 在每个训练批次结束时清空缓存
+        try:
+            from deepspeed.accelerator import get_accelerator
+            get_accelerator().empty_cache()
+        except AttributeError:
+            # 如果get_accelerator()不可用,尝试使用torch.cuda
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception as e:
+            print(f"无法清空缓存: {e}")
     def on_validation_start(self,trainer,pl_module) -> None:
         self.eval_loss = []
 

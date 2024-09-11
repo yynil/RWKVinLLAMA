@@ -181,7 +181,7 @@ class HybridModel(pl.LightningModule):
         return False
     def on_fit_start(self):
         args = self.args
-        if args.teacher_client_mode:
+        if not args.is_sft and args.teacher_client_mode:
             logging.info('start to initialize process group')
             rank = args.rank
             world_size = (args.world_size//args.num_groups)+1
@@ -225,42 +225,45 @@ class HybridModel(pl.LightningModule):
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_perplexity', perplexity, prog_bar=True)
         
-        if args.teacher_client_mode:
-            #get teacher logits
-            self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, self.stream.ptr)
-            self.stream.synchronize()
-            self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
-            self.stream.synchronize()
-            teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
-            logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
-            if args.is_hidden_align:
-                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
-                self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+        if not args.is_sft:
+            if args.teacher_client_mode:
+                #get teacher logits
+                self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, self.stream.ptr)
                 self.stream.synchronize()
-                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server, shape is {self.teacher_hidden_states_buffer.shape}')
+                self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+                self.stream.synchronize()
+                teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
+                logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
+                if args.is_hidden_align:
+                    logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
+                    self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+                    self.stream.synchronize()
+                    logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server, shape is {self.teacher_hidden_states_buffer.shape}')
+            else:
+                with torch.no_grad():
+                    teacher_outputs = teacher_model(
+                        input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
+                teacher_logits = teacher_outputs.logits
+                if args.is_hidden_align:
+                    teacher_hidden_states = teacher_outputs.hidden_states
+            #calculate teacher's loss and perplexity
+            # print(f'teacher_logits shape is {teacher_logits.shape}, labels shape is {labels.shape}')
+
+            # 调整 teacher_logits 和 labels 的形状
+            teacher_logits_reshaped = teacher_logits.view(-1, teacher_logits.size(-1))  # [batch_size * sequence_length, vocab_size]
+            labels_reshaped = labels.view(-1)  # [batch_size * sequence_length]
+
+            # 计算 loss
+            teacher_loss = F.cross_entropy(teacher_logits_reshaped, labels_reshaped)
+
+            # 计算 perplexity
+            teacher_perplexity = torch.exp(teacher_loss)
+
+            self.log('val_teacher_loss', teacher_loss, prog_bar=True)
+            self.log('val_teacher_perplexity', teacher_perplexity, prog_bar=True)
+            return {'loss': loss, 'perplexity': perplexity, 'teacher_loss': teacher_loss, 'teacher_perplexity': teacher_perplexity}
         else:
-            with torch.no_grad():
-                teacher_outputs = teacher_model(
-                    input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
-            teacher_logits = teacher_outputs.logits
-            if args.is_hidden_align:
-                teacher_hidden_states = teacher_outputs.hidden_states
-        #calculate teacher's loss and perplexity
-        # print(f'teacher_logits shape is {teacher_logits.shape}, labels shape is {labels.shape}')
-
-        # 调整 teacher_logits 和 labels 的形状
-        teacher_logits_reshaped = teacher_logits.view(-1, teacher_logits.size(-1))  # [batch_size * sequence_length, vocab_size]
-        labels_reshaped = labels.view(-1)  # [batch_size * sequence_length]
-
-        # 计算 loss
-        teacher_loss = F.cross_entropy(teacher_logits_reshaped, labels_reshaped)
-
-        # 计算 perplexity
-        teacher_perplexity = torch.exp(teacher_loss)
-
-        self.log('val_teacher_loss', teacher_loss, prog_bar=True)
-        self.log('val_teacher_perplexity', teacher_perplexity, prog_bar=True)
-        return {'loss': loss, 'perplexity': perplexity, 'teacher_loss': teacher_loss, 'teacher_perplexity': teacher_perplexity}
+            return {'loss': loss, 'perplexity': perplexity}
     def on_train_batch_end(self, outputs, batch, batch_idx):
         # 在每个训练批次结束时清空缓存
         try:
@@ -278,78 +281,84 @@ class HybridModel(pl.LightningModule):
         input_ids = batch['input_ids']
         labels = batch['labels']
         attention_mask = torch.ne(input_ids, tokenizer.eos_token_id).to(input_ids.device)
-        if args.teacher_client_mode:
-            b,t = input_ids.shape
-            # logging.info(input_ids.dtype)
-            # logging.info(input_ids.shape)
-            logging.info(f'rank {args.rank} is sending input_ids to server, shape is {input_ids.shape}')
-            self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, self.stream.ptr)
-            self.stream.synchronize()
-            logging.info(f'rank {args.rank} is receiving teacher_logits from server')
-            self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
-            self.stream.synchronize()
-            teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
-            logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
-            if args.is_hidden_align:
-                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
-                self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+        if not args.is_sft:
+            if args.teacher_client_mode:
+                b,t = input_ids.shape
+                # logging.info(input_ids.dtype)
+                # logging.info(input_ids.shape)
+                logging.info(f'rank {args.rank} is sending input_ids to server, shape is {input_ids.shape}')
+                self.comm.send(input_ids.data_ptr(), input_ids.size(0)*input_ids.size(1), nccl.NCCL_INT64, args.server_rank, self.stream.ptr)
                 self.stream.synchronize()
-                logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server, shape is {self.teacher_hidden_states_buffer.shape}')
-                teacher_hidden_states = torch.as_tensor(self.teacher_hidden_states_buffer, device=input_ids.device, dtype=torch.float32)#(b*layers,t,hidden_size)
-                logging.info(f'got teacher hidden states shape is {teacher_hidden_states.shape}, rank is {args.rank}')
+                logging.info(f'rank {args.rank} is receiving teacher_logits from server')
+                self.comm.recv(self.recv_buffer.data.ptr, self.recv_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+                self.stream.synchronize()
+                teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
+                logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
+                if args.is_hidden_align:
+                    logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
+                    self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
+                    self.stream.synchronize()
+                    logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server, shape is {self.teacher_hidden_states_buffer.shape}')
+                    teacher_hidden_states = torch.as_tensor(self.teacher_hidden_states_buffer, device=input_ids.device, dtype=torch.float32)#(b*layers,t,hidden_size)
+                    logging.info(f'got teacher hidden states shape is {teacher_hidden_states.shape}, rank is {args.rank}')
+            else:
+                with torch.no_grad():
+                    teacher_outputs = teacher_model(
+                        input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
+                teacher_logits = teacher_outputs.logits
+                if args.is_hidden_align:
+                    teacher_hidden_states = teacher_outputs.hidden_states    
+                    teacher_hidden_states = torch.cat(teacher_hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
+            
+            # teacher_logits = teacher_logits.detach()
+            student_outputs = self.forward(
+                input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
+            if not args.is_hidden_align:
+                # 假设 labels 是输入的真实标签
+                targets = F.softmax(teacher_logits, dim=-1)
+                student_logits = student_outputs.logits
+                student_cross_entropy_loss = student_outputs.loss
+
+                # 创建一个掩码，标记不是 -100 的位置
+                mask = (labels != -100).float()
+
+                # 计算 log_softmax，但只在非 -100 的位置
+                log_probs_student = F.log_softmax(student_logits, dim=-1) * mask.unsqueeze(-1)
+                probs_teacher = targets * mask.unsqueeze(-1)
+
+                # 计算 KL 散度，忽略 -100 的位置
+                kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
+                kl_div = kl_div.sum(dim=-1)  # 在词汇表维度上求和
+
+                # 计算非 -100 标记的数量
+                num_valid_elements = mask.sum()
+
+                # 计算平均 KL 散度，只考虑非 -100 的位置
+                kl_loss = kl_div.sum() / num_valid_elements
+
+                loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
+                self.log('train_loss', loss)
+                returned_loss = {}
+                returned_loss['loss'] = loss
+                returned_loss['kl_loss'] = kl_loss
+                returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
+                return returned_loss
+            else:
+                logging.info(f'rank {args.rank} training with hidden states alignment')
+                mask = torch.ne(labels, -100).to(labels.device)
+                mask = mask.unsqueeze(1).unsqueeze(3)#(b,1,t,1)
+                hidden_states = torch.cat(student_outputs.hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
+                hidden_states = hidden_states * mask
+                teacher_hidden_states = teacher_hidden_states * mask
+                logging.info(f'students hidden shape is {hidden_states.shape}, rank is {args.rank}')
+                logging.info(f'teachers hidden shape is {teacher_hidden_states.shape}, rank is {args.rank}')
+                loss = F.mse_loss(hidden_states, teacher_hidden_states.to(hidden_states.dtype))
+                self.log('train_loss', loss)
+                logging.info(f'rank {args.rank} finished training with hidden states alignment, loss is {loss}')
+                return loss
         else:
-            with torch.no_grad():
-                teacher_outputs = teacher_model(
-                    input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
-            teacher_logits = teacher_outputs.logits
-            if args.is_hidden_align:
-                teacher_hidden_states = teacher_outputs.hidden_states    
-                teacher_hidden_states = torch.cat(teacher_hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
-        
-        # teacher_logits = teacher_logits.detach()
-        student_outputs = self.forward(
-            input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
-        if not args.is_hidden_align:
-            # 假设 labels 是输入的真实标签
-            targets = F.softmax(teacher_logits, dim=-1)
-            student_logits = student_outputs.logits
-            student_cross_entropy_loss = student_outputs.loss
-
-            # 创建一个掩码，标记不是 -100 的位置
-            mask = (labels != -100).float()
-
-            # 计算 log_softmax，但只在非 -100 的位置
-            log_probs_student = F.log_softmax(student_logits, dim=-1) * mask.unsqueeze(-1)
-            probs_teacher = targets * mask.unsqueeze(-1)
-
-            # 计算 KL 散度，忽略 -100 的位置
-            kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
-            kl_div = kl_div.sum(dim=-1)  # 在词汇表维度上求和
-
-            # 计算非 -100 标记的数量
-            num_valid_elements = mask.sum()
-
-            # 计算平均 KL 散度，只考虑非 -100 的位置
-            kl_loss = kl_div.sum() / num_valid_elements
-
-            loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
+            outputs = self.forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False)
+            loss = outputs.loss
             self.log('train_loss', loss)
-            returned_loss = {}
-            returned_loss['loss'] = loss
-            returned_loss['kl_loss'] = kl_loss
-            returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
-            return returned_loss
-        else:
-            logging.info(f'rank {args.rank} training with hidden states alignment')
-            mask = torch.ne(labels, -100).to(labels.device)
-            mask = mask.unsqueeze(1).unsqueeze(3)#(b,1,t,1)
-            hidden_states = torch.cat(student_outputs.hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
-            hidden_states = hidden_states * mask
-            teacher_hidden_states = teacher_hidden_states * mask
-            logging.info(f'students hidden shape is {hidden_states.shape}, rank is {args.rank}')
-            logging.info(f'teachers hidden shape is {teacher_hidden_states.shape}, rank is {args.rank}')
-            loss = F.mse_loss(hidden_states, teacher_hidden_states.to(hidden_states.dtype))
-            self.log('train_loss', loss)
-            logging.info(f'rank {args.rank} finished training with hidden states alignment, loss is {loss}')
             return loss
             
