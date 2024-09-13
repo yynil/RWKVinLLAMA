@@ -124,8 +124,10 @@ if __name__ == '__main__':
     args.nccl_file = config['teach_mode']['nccl_file']
     args.num_groups = config['teach_mode']['num_groups']
     args.is_hidden_align = config['teach_mode']['is_hidden_align']
-    args.is_sft = config['is_sft']
-    
+    args.is_sft = config.get('is_sft', False)
+    args.is_llama_ffn = config.get('is_llama_ffn', False)
+    args.is_rwkv_att_only = config.get('is_rwkv_att_only', False)
+    print(f'args is {args}')
     assert args.num_devices % args.num_groups == 0
     import time
     args.my_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -139,11 +141,25 @@ if __name__ == '__main__':
         
 
     model = HybridModel(transformer_model,args,teacher_model,tokenizer)
-
-    for name, param in model.named_parameters():
-        if not 'block.' in name:
-            param.requires_grad = False
-        print(name, param.shape, param.requires_grad)
+    if args.is_rwkv_att_only:
+        print('only rwkv att is trained')
+        for name, param in model.named_parameters():
+            if not 'self_attn.' in name:
+                param.requires_grad = False
+            print(name, param.shape, param.requires_grad)
+    else:
+        if args.is_llama_ffn:
+            print('keep llama ffn frozen')
+            for name, param in model.named_parameters():
+                if not 'block.' in name or 'ffn' in name:
+                    param.requires_grad = False
+                print(name, param.shape, param.requires_grad)
+        else:
+            print('keep other modules frozen except rwkv block')
+            for name, param in model.named_parameters():
+                if not 'block.' in name:
+                    param.requires_grad = False
+                print(name, param.shape, param.requires_grad)
     import datasets
     if args.train_data is not None:
         print(f'load train data from {args.train_data}')

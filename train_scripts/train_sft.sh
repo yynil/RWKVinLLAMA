@@ -85,7 +85,7 @@ WKV=fla CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.p
     --micro_bsz $BS \
     --preprocessed_data $BASE_DIR_TRAIN \
     --dropout $DROPOUT \
-    --strategy deepspeed_stage_3 \
+    --strategy deepspeed_stage_3_offload \
     --log_every_n_steps $LOG_EVERY_N_STEPS \
     --lr_final $LR_FINAL \
     --warmup_steps $WARMUP \

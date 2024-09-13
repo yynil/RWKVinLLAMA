@@ -225,7 +225,10 @@ class Block(nn.Module):
         else:
             att_out, att_state = self.att(self.ln1(x), last_state.time_mix_state)
             x = x + att_out
-        ffn_out, fnn_state = self.ffn(self.ln2(x), last_state.channel_mix_state)
+        if args.is_llama_ffn:
+            ffn_out,None = self.ffn(self.ln2(x))
+        else:
+            ffn_out, fnn_state = self.ffn(self.ln2(x), last_state.channel_mix_state)
         x = x + ffn_out
         last_state.time_mix_state = att_state
         last_state.channel_mix_state = fnn_state
@@ -282,6 +285,8 @@ class HybridModel(nn.Module):
         n_share = attn_num_heads // attn_num_key_value_heads
         def init_block_params(rwkv_args,layer_idx,llama_layer):
             decoder = RWKVDecoderLayer(rwkv_args,layer_idx)
+            if rwkv_args.is_llama_ffn:
+                decoder.block.ffn = llama_layer.mlp
             # decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
             # decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
             # decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)

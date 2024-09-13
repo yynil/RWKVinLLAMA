@@ -16,7 +16,7 @@ def setup_env():
     os.environ['RWKV_T_MAX'] = '4096'
     os.environ["RWKV_MY_TESTING"]='x060'
     os.environ['RWKV_CTXLEN'] = '4096'
-    os.environ['WKV'] = ''
+    os.environ['WKV'] = 'fla'
     os.environ["RWKV_TRAIN_TYPE"] = ''
 setup_env()
 import argparse
@@ -25,7 +25,7 @@ import yaml
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default='configs/test_hybrid.yaml')
 # args = parser.parse_args()
-config_file = 'configs/test_hybrid_full_logits.yaml'
+config_file = 'configs/test_hybrid_full_logits_rwkv_att_only.yaml'
 with open(config_file) as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 print(config)
@@ -51,19 +51,28 @@ rwkv_args.tiny_att_dim = 0
 rwkv_args.tiny_att_layer = -999
 rwkv_args.vocab_size = transformer_model.config.vocab_size
 rwkv_args.dropout = 0
+rwkv_args.is_llama_ffn = True
 rwkv_args.layers = config['RWKV']['layers']
 rwkv_args.grad_cp = 0
 rwkv_args.is_hidden_align = config['teach_mode']['is_hidden_align']
+rwkv_args.is_llama_ffn = config.get('is_llama_ffn', False)
+rwkv_args.is_rwkv_att_only = config.get('is_rwkv_att_only', False)
 from hybrid_model import HybridModel
 
 model = HybridModel(transformer_model,rwkv_args)
 print(model)
-del transformer_model
+if rwkv_args.is_rwkv_att_only:
+    print(f'only rwkv att is trained')
+    for name, param in model.named_parameters():
+        if not 'self_attn.' in name:
+            param.requires_grad = False
+        print(name, param.shape, param.requires_grad)
+else:
+    for name, param in model.named_parameters():
+        if not 'block.' in name or 'ffn' in name:
+            param.requires_grad = False
+        print(name, param.shape, param.requires_grad)
 model = model.to(device=device, dtype=dtype)
-for name, param in model.named_parameters():
-    if not 'block.' in name:
-        param.requires_grad = False
-    print(name, param.shape, param.requires_grad)
 labels = torch.randint(0, rwkv_args.vocab_size, (2, 64), device=device, dtype=torch.long)
 labels[0,20:] = -100
 labels[1,10:] = -100

@@ -1,3 +1,4 @@
+from functools import partial
 from src.model import RWKV_Tmix_x060, RWKV_CMix_x060,Block
 import torch
 import pytorch_lightning as pl
@@ -56,6 +57,32 @@ class RWKVDecoderLayer(nn.Module):
             past_key_value.update(dummy_keys, dummy_values, self.layer_idx)
 
         return (hidden_states, None, past_key_value)
+    
+class TimeMixWrapper(nn.Module):
+    def __init__(self,args,layer_idx):
+        super(TimeMixWrapper, self).__init__()
+        self.args = args
+        self.layer_idx = layer_idx
+        self.time_mixer = RWKV_Tmix_x060(args,layer_idx)
+        
+    def forward(self,
+                hidden_states,
+            attention_mask,
+            position_ids,
+            past_key_value,
+            output_attentions,
+            use_cache,
+            cache_position,
+            position_embeddings,
+            **kwargs,):
+        args = self.args
+        hidden_states.requires_grad_(True)
+        if args.grad_cp == 1:
+            x = deepspeed.checkpointing.checkpoint(self.time_mixer, hidden_states)
+        else:
+            x = self.time_mixer(hidden_states)
+        return x,None,None
+
 
 class HybridModel(pl.LightningModule):
     def __init__(self,transformer_model,rwkv_args,teacher_model = None,tokenizer=None):
@@ -65,18 +92,31 @@ class HybridModel(pl.LightningModule):
         assert attn_num_heads % attn_num_key_value_heads == 0
         n_share = attn_num_heads // attn_num_key_value_heads
         def init_block_params(rwkv_args,layer_idx,llama_layer):
-            decoder = RWKVDecoderLayer(rwkv_args,layer_idx)
-            decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
-            decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
-            decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
-            decoder.block.att.output.weight.data = llama_layer.self_attn.o_proj.weight.data
-            decoder.block.ffn.key.weight.data = llama_layer.mlp.up_proj.weight.data
-            decoder.block.ffn.value.weight.data = llama_layer.mlp.down_proj.weight.data
-            return decoder
+            if rwkv_args.is_rwkv_att_only:
+                decoder = llama_layer
+                att = TimeMixWrapper(rwkv_args,layer_idx)
+                att.time_mixer.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
+                att.time_mixer.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
+                att.time_mixer.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
+                att.time_mixer.output.weight.data = llama_layer.self_attn.o_proj.weight.data
+                llama_layer.self_attn = att
+                return decoder
+            else:
+                decoder = RWKVDecoderLayer(rwkv_args,layer_idx)
+                decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
+                decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
+                decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
+                decoder.block.att.output.weight.data = llama_layer.self_attn.o_proj.weight.data
+                if rwkv_args.is_llama_ffn:
+                    decoder.block.ffn = llama_layer.mlp
+                else:
+                    decoder.block.ffn.key.weight.data = llama_layer.mlp.up_proj.weight.data
+                    decoder.block.ffn.value.weight.data = llama_layer.mlp.down_proj.weight.data
+                return decoder
         for layer_idx in range(transformer_model.config.num_hidden_layers):
             if layer_idx in rwkv_args.layers:
-                rwkv_encoder = init_block_params(rwkv_args,layer_idx,transformer_model.model.layers[layer_idx])
-                transformer_model.model.layers[layer_idx] = rwkv_encoder
+                decoder = init_block_params(rwkv_args,layer_idx,transformer_model.model.layers[layer_idx])
+                transformer_model.model.layers[layer_idx] = decoder
         self.model = transformer_model
         self.args = rwkv_args
         self.teacher_model = teacher_model
@@ -325,7 +365,10 @@ class HybridModel(pl.LightningModule):
                 # 计算 log_softmax，但只在非 -100 的位置
                 log_probs_student = F.log_softmax(student_logits, dim=-1) * mask.unsqueeze(-1)
                 probs_teacher = targets * mask.unsqueeze(-1)
-
+                # del targets
+                # del student_logits
+                # torch.cuda.empty_cache()
+                # print(f'log_probs_student shape is {log_probs_student.shape}, probs_teacher shape is {probs_teacher.shape}')
                 # 计算 KL 散度，忽略 -100 的位置
                 kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
                 kl_div = kl_div.sum(dim=-1)  # 在词汇表维度上求和

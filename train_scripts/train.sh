@@ -15,10 +15,10 @@ OUTPUT_ALL_HIDDENS=“”
 
 # 新增的默认路径前缀
 TRAIN_PREFIX="/home/rwkv/preprocessed_"
-VAL_PREFIX="/home/rwkv/preprocessed_val_"
+VAL_PREFIX=""
 OUTPUT_PREFIX="/data/rwkv/tmp/distill-en-zh-stage-2_"
 CONFIG_FILE="configs/test_hybrid_full_logits_stage_2.yaml"
-CKPT_FILE="/data/rwkv/tmp/distill-c4-en-zh/pytorch_model.1400m.bin"
+CKPT_FILE=""
 
 # 解析命名参数
 while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:h:" opt; do
@@ -51,7 +51,7 @@ while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:h:" opt; do
     ;;
     c) CONFIG_FILE="$OPTARG"
     ;;
-    k) CKPT_FILE="$OPTARG"
+    k) CKPT_FILE="--ckpt_file $OPTARG"
     ;;
     h) OUTPUT_ALL_HIDDENS="--output_all_hiddens"
     ;;
@@ -63,7 +63,12 @@ done
 
 # 构建完整的路径
 BASE_DIR_TRAIN="${TRAIN_PREFIX}${MIN}_${MAX}"
-BASE_DIR_VAL="${VAL_PREFIX}${MIN}_${MAX}"
+if [ -z "$VAL_PREFIX" ]; then
+  BASE_DIR_VAL=""
+else
+  BASE_DIR_VAL="${VAL_PREFIX}${MIN}_${MAX}"
+fi
+
 OUTPUT_DIR="${OUTPUT_PREFIX}${MIN}_${MAX}"
 
 echo "参数设置："
@@ -95,6 +100,6 @@ WKV=fla CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.p
     --log_every_n_steps $LOG_EVERY_N_STEPS \
     --lr_final $LR_FINAL \
     --warmup_steps $WARMUP \
-    --ckpt_file $CKPT_FILE \
+    $CKPT_FILE \
     --val_check_interval $VAL_CHECK_INTERVAL \
     --wandb hybrid_trainer_${MIN}_${MAX}
