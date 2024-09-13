@@ -18,7 +18,7 @@ from rwkv_llama.utilities import HybridCache
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"使用设备: {device}")
 from transformers import AutoModelForCausalLM, AutoTokenizer
-config_file = "configs/test_hybrid_full_logits_stage_2.yaml"
+config_file = "configs/test_hybrid_full_logits_llamamlp_local.yaml"
 import yaml
 with open(config_file) as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
@@ -29,18 +29,21 @@ transformer_model = AutoModelForCausalLM.from_pretrained(model_id)
 print(transformer_model)
 from hybrid_model_run import create_rwkv_args,HybridModel
 args = create_rwkv_args(transformer_model.config, config)
+print(args)
 model = HybridModel(transformer_model,args)
 print(model)
-ckpt_file = '/home/yueyulin/model/hybrid/hybrid_model_512_15k.pt'
+ckpt_file = '/home/yueyulin/model/distill_0_256.pth'
 model.load_ckpt(ckpt_file)
 # 创建HybridCache实例
 cache = HybridCache()
 
 # 准备输入
-input_text = "In a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
+# input_text = "In a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
+# input_text = "你是一个旅游行程规划专家，请根据用户需求生成他们需要的旅行计划，要尽可能详细到时间和地点。\n\nAssistant: 好的。\n\nUser: 请为我生成一份在北京两天的旅游计划。\n\nAssistant: 好的"
+input_text = "你是一个编程领域专家。请根据用户给的需求生成用户需要的代码。\n\nAssistant: 好的。\n\nUser: 请生成一个 Java 程序,输入一个整数列表,找到该列表的最大值，并且打印出最大值和最大值的位置。\n\nAssistant: 好的"
 input_ids = tokenizer(input_text, return_tensors="pt").to(device)
 print(input_ids)
-
+    
 model = model.to(dtype=torch.bfloat16,device='cuda')
 model.eval()
 # 使用模型生成输出,同时使用HybridCache
@@ -51,7 +54,7 @@ with torch.no_grad():
         max_length=500,
         num_return_sequences=1,
         past_key_values=cache,
-        use_cache=True
+        use_cache=True,stop_strings=["\n\nUser:"], tokenizer=tokenizer
     )
 
 # 解码输出
