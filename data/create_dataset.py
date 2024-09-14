@@ -3,7 +3,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--tokenizer', type=str, default='/media/yueyulin/data_4t/models/tinyLlama-1.1B-Chat-V1.0/')
     parser.add_argument('--output_dir', type=str, default='/media/yueyulin/data_4t/data/ultrachat_200k_ds/')
-    parser.add_argument('--max_len', type=int, default=2048)
+    parser.add_argument('--max_len', type=int, default=4096)
     args = parser.parse_args()
     import os
     os.environ['HF_ENDPOINT']='https://hf-mirror.com'
@@ -52,7 +52,9 @@ if __name__ == '__main__':
             inputs_ids.append(input_ids)
             labels_ids.append(labels)
         return {'input_ids':inputs_ids,'labels':labels_ids}
-    train_sft_ds = dataset['train_sft'].map(tokenize_and_cut, batched=True,remove_columns=['prompt','messages','prompt_id'],num_proc=4)
+    train_gen_ds = dataset['train_gen'].map(tokenize_and_cut, batched=True,remove_columns=['prompt','messages','prompt_id'],num_proc=64)
+    train_sft_ds = dataset['train_sft'].map(tokenize_and_cut, batched=True,remove_columns=['prompt','messages','prompt_id'],num_proc=64)
     os.makedirs(args.output_dir,exist_ok=True)
-    train_sft_ds.save_to_disk(args.output_dir)
+    from datasets import concatenate_datasets
+    concatenate_datasets([train_gen_ds,train_sft_ds]).save_to_disk(args.output_dir)
                 

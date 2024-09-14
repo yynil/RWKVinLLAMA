@@ -39,9 +39,10 @@ cache = HybridCache()
 
 # 准备输入
 # input_text = "In a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
-input_text = "User: 请为我生成一份在北京两天的旅游计划。\n\nAssistant: 好的"
-# input_text = "User: 请生成一个 Python 程序,输入一个整数列表,找到该列表的最大值，并且打印出最大值和最大值的位置。\n\nAssistant: 好的"
-# input_text = "User: Please prepare a journey plan for me for two days in Beijing.\n\nAssistant: Okay."
+# input_text = "User: 请为我生成一份在北京两天的旅游计划。\n\nAssistant: "
+# input_text = "User: 请生成一个 Python 程序,输入一个整数列表,找到该列表的最大值，并且打印出最大值和最大值的位置。\n\nAssistant: "
+input_text = "User: This is some data: Atlanta, isPartOf, Fulton County, Georgia.\n\nGenerate a detailed description of this data.\n\nAssistant: "
+input_text = "User: 提取出以下句子的人物、地点和时间，以 JSON 格式输出。\n\n2019年，中国的人均GDP达到了10000美元。\n\nAssistant: {"
 # input_text = "User: Please generate a Python program that takes an integer list as input, finds the maximum value of the list, the return value should be a tuple which is the max value and the index of the max value in the original list.\n\nAssistant: Okay."
 input_ids = tokenizer(input_text, return_tensors="pt").to(device)
 print(input_ids)
