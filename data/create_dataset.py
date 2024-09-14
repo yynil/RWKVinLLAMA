@@ -34,12 +34,21 @@ if __name__ == '__main__':
             labels = [-100]
             for msg_obj in messages:
                 content = msg_obj['content']
-                role = msg_obj['role']+' : '
+                role = msg_obj['role']
+                if not content.endswith("\n\n"):
+                    content += "\n\n"
+                if role == 'assistant':
+                    role = 'Assistant : '
+                elif role == 'user':
+                    role = 'User : '
+                else:
+                    #make the first letter of role uppercase
+                    role = role[0].upper() + role[1:] + ' : '
                 role_ids = tokenizer.encode(role, add_special_tokens=False)
                 ids = tokenizer.encode(content, add_special_tokens=False)
                 input_ids.extend(role_ids)
                 input_ids.extend(ids)
-                if 'assistant' in role:
+                if role == 'Assistant : ':
                     labels.extend([-100]*len(role_ids))
                     labels.extend(ids)
                 else:
