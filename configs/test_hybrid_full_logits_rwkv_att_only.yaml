@@ -3,7 +3,7 @@ RWKV:
   grad_cp: 1
 
 Llama:
-  model_id: /data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/
+  model_id: /home/yueyulin/models/llama-3.1-8B-Instruct/
 is_llama_ffn: True
 is_rwkv_att_only: True
 kl_weight: 0.1

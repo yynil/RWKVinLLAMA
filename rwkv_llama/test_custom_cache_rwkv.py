@@ -40,7 +40,9 @@ cache = HybridCache()
 # 准备输入
 # input_text = "In a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 # input_text = "你是一个旅游行程规划专家，请根据用户需求生成他们需要的旅行计划，要尽可能详细到时间和地点。\n\nAssistant: 好的。\n\nUser: 请为我生成一份在北京两天的旅游计划。\n\nAssistant: 好的"
-input_text = "你是一个编程领域专家。请根据用户给的需求生成用户需要的代码。\n\nAssistant: 好的。\n\nUser: 请生成一个 Java 程序,输入一个整数列表,找到该列表的最大值，并且打印出最大值和最大值的位置。\n\nAssistant: 好的"
+input_text = "User: 请生成一个 Python 程序,输入一个整数列表,找到该列表的最大值，并且打印出最大值和最大值的位置。\n\nAssistant: 好的"
+input_text = "User: Please prepare a journey plan for me for two days in Beijing.\n\nAssistant: Okay."
+input_text = "User: Please generate a Python program that takes an integer list as input, finds the maximum value of the list, and prints out the maximum value and the position of the maximum value.\n\nAssistant: Okay."
 input_ids = tokenizer(input_text, return_tensors="pt").to(device)
 print(input_ids)
     

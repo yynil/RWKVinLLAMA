@@ -1,0 +1,18 @@
+<system version="1">
+  <cpu numaid="3" affinity="c0c0" arch="x86_64" vendor="AuthenticAMD" familyid="143" modelid="49">
+    <pci busid="0000:01:00.0" class="0x030000" vendor="0x10de" device="0x2684" subsystem_vendor="0x1458" subsystem_device="0x40bf" link_speed="16.0 GT/s PCIe" link_width="16">
+      <gpu dev="0" sm="89" rank="0" gdr="0"/>
+    </pci>
+    <pci busid="0000:02:00.0" class="0x020700" vendor="0x15b3" device="0x1013" subsystem_vendor="0x15b3" subsystem_device="0x0014" link_speed="8.0 GT/s PCIe" link_width="16">
+      <nic>
+        <net name="mlx5_0" dev="0" speed="100000" port="1" latency="0.000000" guid="0x84c36d000390fe7c" maxconn="262144" gdr="0"/>
+        <net name="mlx5_1" dev="1" speed="100000" port="2" latency="0.000000" guid="0x84c36d000390fe7c" maxconn="262144" gdr="0"/>
+      </nic>
+    </pci>
+  </cpu>
+  <cpu numaid="2" affinity="3030" arch="x86_64" vendor="AuthenticAMD" familyid="143" modelid="49">
+    <pci busid="0000:46:00.0" class="0x030000" vendor="0x10de" device="0x2684" subsystem_vendor="0x1458" subsystem_device="0x40bf" link_speed="16.0 GT/s PCIe" link_width="16">
+      <gpu dev="1" sm="89" rank="1" gdr="0"/>
+    </pci>
+  </cpu>
+</system>
