@@ -53,11 +53,11 @@ def create_input_ids(conversations, tokenizer):
         content = conv['content']
         
         if role == 'user':
-            content = 'User: ' + content
+            content = 'User : ' + content
         elif role == 'assistant':
-            content = 'Assistant: ' + content
+            content = 'Assistant : ' + content
         elif role == 'system':
-            content = 'System: ' + content
+            content = 'System : ' + content
         
         if not content.endswith('\n\n'):
             content += '\n\n'

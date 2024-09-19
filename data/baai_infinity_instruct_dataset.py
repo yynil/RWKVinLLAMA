@@ -16,13 +16,14 @@ def create_input_ids(conversations, tokenizer,max_seq_length):
         for chat_data in conversations[i]:
             role = chat_data['from']
             content = chat_data['value']
-            if role == 'human':
-                content = 'User: ' + content
-            elif role == 'gpt':
-                content = 'Assistant: ' + content
-            else:
-                content = 'System: ' + content
-            content = content + '\n\n'
+            # if role == 'human':
+            #     content = 'User: ' + content
+            # elif role == 'gpt':
+            #     content = 'Assistant: ' + content
+            # else:
+            #     content = 'System: ' + content
+            if not content.endswith('\n\n'):
+                content = content + '\n\n'
             encoded_ids = tokenizer(content, add_special_tokens=False)['input_ids']
             input_ids.extend(encoded_ids)
             if role == 'gpt':

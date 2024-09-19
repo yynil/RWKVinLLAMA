@@ -51,43 +51,61 @@ def handle_conversations(conversations: List[str], model, tokenizer, device):
 
     return new_conversations
 
+def process_file(file, model_id, output_dir, device):
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=torch.float16, device=device)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        model.config.pad_token_id = model.config.eos_token_id
+
+    with open(file, 'r') as f:
+        lines = f.readlines()
+    progress_bar = tqdm(lines, desc='processing ' + file)
+    output_file_name = os.path.basename(file)
+    output_file_name = os.path.join(output_dir, output_file_name)
+    with open(output_file_name, 'w') as f:
+        for line in progress_bar:
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            conversations = json.loads(line)['data']
+            new_conversations = handle_conversations(conversations, model, tokenizer, device)
+            f.write(json.dumps({'data': new_conversations}) + '\n')
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_id', type=str, default='/home/yueyulin/model/llama-3.1-8B-Instruct/')
-    parser.add_argument('--data_dir', type=str, default='/home/yueyulin/data/ultrachat')
-    parser.add_argument('--output_dir', type=str, default='/home/yueyulin/data/ultrachat_llama3.1_pseudo_labels/')
-    parser.add_argument('--device', type=str, default='cuda:1')
+    parser.add_argument('--model_id', type=str, default='/data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/')
+    parser.add_argument('--data_dir', type=str, default='/data/rwkv/data/ultrachat')
+    parser.add_argument('--output_dir', type=str, default='/data/rwkv/data/ultrachat_llama3_1_pseudo_labels/')
+    parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--num_devices', type=int, default=8)
     args = parser.parse_args()
 
     model_id = args.model_id
     data_dir = args.data_dir
     output_dir = args.output_dir
-
+    num_devices = args.num_devices
     os.makedirs(output_dir, exist_ok=True)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    device = args.device
-    model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=torch.float16, device=device)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-        model.config.pad_token_id = model.config.eos_token_id
+    # tokenizer = AutoTokenizer.from_pretrained(model_id)
+    # device = args.device
+    # model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=torch.float16, device=device)
+    # if tokenizer.pad_token is None:
+    #     tokenizer.pad_token = tokenizer.eos_token
+    #     model.config.pad_token_id = model.config.eos_token_id
     files = glob.glob(os.path.join(data_dir, '*.jsonl'))
     print('processing ', files)
+    # 创建进程池
+    import multiprocessing
+    pool = multiprocessing.Pool(processes=num_devices)
+    # 为每个文件分配一个进程和一个设备
+    for i, file in enumerate(files):
+        device = f'cuda:{i % num_devices}'
+        pool.apply_async(process_file, args=(file, model_id, output_dir, device))
 
-    for file in files:
-        with open(file, 'r') as f:
-            lines = f.readlines()
-        progress_bar = tqdm(lines, desc='processing ' + file)
-        output_file_name = os.path.basename(file)
-        output_file_name = os.path.join(output_dir, output_file_name)
-        with open(output_file_name, 'w') as f:
-            for line in progress_bar:
-                line = line.strip()
-                if len(line) == 0:
-                    continue
-                conversations = json.loads(line)['data']
-                new_conversations = handle_conversations(conversations, model, tokenizer, device)
-                # Here you might want to save new_conversations to a file in output_dir
-                f.write(json.dumps({'data': new_conversations}) + '\n')
+    pool.close()
+    pool.join()
+
 if __name__ == '__main__':
     main()
