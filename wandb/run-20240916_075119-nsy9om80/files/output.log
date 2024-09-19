@@ -1,0 +1,195 @@
+Traceback (most recent call last):
+  File "/home/rwkv/github/RWKVinLLAMA/train_scripts/train_hybrid.py", line 268, in <module>
+    trainer.fit(model,
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 538, in fit
+    call._call_and_handle_interrupt(
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 46, in _call_and_handle_interrupt
+    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 105, in launch
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 574, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 981, in _run
+    results = self._run_stage()
+              ^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 1025, in _run_stage
+    self.fit_loop.run()
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 205, in run
+    self.advance()
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 363, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 140, in run
+    self.advance(data_fetcher)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 250, in advance
+    batch_output = self.automatic_optimization.run(trainer.optimizers[0], batch_idx, kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 190, in run
+    self._optimizer_step(batch_idx, closure)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 268, in _optimizer_step
+    call._call_lightning_module_hook(
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 167, in _call_lightning_module_hook
+    output = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/core/module.py", line 1306, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/core/optimizer.py", line 153, in step
+    step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/ddp.py", line 270, in optimizer_step
+    optimizer_output = super().optimizer_step(optimizer, closure, model, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 238, in optimizer_step
+    return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/plugins/precision/deepspeed.py", line 129, in optimizer_step
+    closure_result = closure()
+                     ^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 144, in __call__
+    self._result = self.closure(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 129, in closure
+    step_output = self._step_fn()
+                  ^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 317, in _training_step
+    training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 319, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 389, in training_step
+    return self._forward_redirection(self.model, self.lightning_module, "training_step", *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 640, in __call__
+    wrapper_output = wrapper_module(*args, **kwargs)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/utils/nvtx.py", line 15, in wrapped_fn
+    ret_val = func(*args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/runtime/engine.py", line 1846, in forward
+    loss = self.module(*inputs, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1603, in _call_impl
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 633, in wrapped_forward
+    out = method(*_args, **_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/github/RWKVinLLAMA/rwkv_llama/hybrid_model.py", line 374, in training_step
+    kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/functional.py", line 3006, in kl_div
+    reduced = torch.kl_div(input, target, reduction_enum, log_target=log_target)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.43 GiB. GPU 0 has a total capacity of 79.25 GiB of which 812.75 MiB is free. Including non-PyTorch memory, this process has 78.45 GiB memory in use. Of the allocated memory 66.39 GiB is allocated by PyTorch, and 5.35 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/rwkv/github/RWKVinLLAMA/train_scripts/train_hybrid.py", line 268, in <module>
+[rank0]:     trainer.fit(model,
+[rank0]:     ^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 538, in fit
+[rank0]:     call._call_and_handle_interrupt(
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 46, in _call_and_handle_interrupt
+[rank0]:     return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 105, in launch
+[rank0]:     return function(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 574, in _fit_impl
+[rank0]:     self._run(model, ckpt_path=ckpt_path)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 981, in _run
+[rank0]:     results = self._run_stage()
+[rank0]:               ^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 1025, in _run_stage
+[rank0]:     self.fit_loop.run()
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 205, in run
+[rank0]:     self.advance()
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 363, in advance
+[rank0]:     self.epoch_loop.run(self._data_fetcher)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 140, in run
+[rank0]:     self.advance(data_fetcher)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 250, in advance
+[rank0]:     batch_output = self.automatic_optimization.run(trainer.optimizers[0], batch_idx, kwargs)
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 190, in run
+[rank0]:     self._optimizer_step(batch_idx, closure)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 268, in _optimizer_step
+[rank0]:     call._call_lightning_module_hook(
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 167, in _call_lightning_module_hook
+[rank0]:     output = fn(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/core/module.py", line 1306, in optimizer_step
+[rank0]:     optimizer.step(closure=optimizer_closure)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/core/optimizer.py", line 153, in step
+[rank0]:     step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+[rank0]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/ddp.py", line 270, in optimizer_step
+[rank0]:     optimizer_output = super().optimizer_step(optimizer, closure, model, **kwargs)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 238, in optimizer_step
+[rank0]:     return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/plugins/precision/deepspeed.py", line 129, in optimizer_step
+[rank0]:     closure_result = closure()
+[rank0]:                      ^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 144, in __call__
+[rank0]:     self._result = self.closure(*args, **kwargs)
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 129, in closure
+[rank0]:     step_output = self._step_fn()
+[rank0]:                   ^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 317, in _training_step
+[rank0]:     training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+[rank0]:                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 319, in _call_strategy_hook
+[rank0]:     output = fn(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 389, in training_step
+[rank0]:     return self._forward_redirection(self.model, self.lightning_module, "training_step", *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 640, in __call__
+[rank0]:     wrapper_output = wrapper_module(*args, **kwargs)
+[rank0]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/utils/nvtx.py", line 15, in wrapped_fn
+[rank0]:     ret_val = func(*args, **kwargs)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/runtime/engine.py", line 1846, in forward
+[rank0]:     loss = self.module(*inputs, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1603, in _call_impl
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 633, in wrapped_forward
+[rank0]:     out = method(*_args, **_kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/github/RWKVinLLAMA/rwkv_llama/hybrid_model.py", line 374, in training_step
+[rank0]:     kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/functional.py", line 3006, in kl_div
+[rank0]:     reduced = torch.kl_div(input, target, reduction_enum, log_target=log_target)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.43 GiB. GPU 0 has a total capacity of 79.25 GiB of which 812.75 MiB is free. Including non-PyTorch memory, this process has 78.45 GiB memory in use. Of the allocated memory 66.39 GiB is allocated by PyTorch, and 5.35 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

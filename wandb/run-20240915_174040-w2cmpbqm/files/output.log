@@ -1,0 +1,199 @@
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+200 2.280686 9.7834  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_200/Llama3.18BInstructRWKV8Layers.pth
+/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/deepspeed.py:634: When saving the DeepSpeed Stage 3 checkpoint, each worker will save a shard of the checkpoint within a directory. If a single file is required after training, see https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html#deepspeed-zero-stage-3-single-file for instructions.
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+400 1.915573 6.7908  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_400/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 18:19:18,003] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+600 2.074354 7.9594  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+800 1.894339 6.6481  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_800/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 18:56:58,686] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+1000 1.907625 6.7371  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1000/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 19:15:51,539] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+1200 2.153272 8.6130  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1200/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 19:34:45,828] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+1400 2.512292 12.3332  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+1600 2.194732 8.9776  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+1800 2.517787 12.4011  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_1800/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 20:31:07,572] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+2000 1.931149 6.8974  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_2000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_0_step_2000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+2200 2.016935 7.5153  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2200/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 21:09:10,434] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+2400 2.466422 11.7802  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+2600 1.989569 7.3124  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+2800 2.759347 15.7895  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_2800/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 22:06:04,296] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+3000 1.969008 7.1636  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+3200 2.385489 10.8644  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3200/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 22:43:54,323] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+3400 2.363509 10.6282  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3400/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 23:02:42,978] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+3600 2.637041 13.9718  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3600/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 23:21:28,890] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+3800 1.998151 7.3754  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_3800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+4000 1.919782 6.8195  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_4000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_1_step_4000/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-15 23:59:07,393] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+4200 2.222959 9.2346  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4200/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 00:18:06,269] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+4400 1.698111 5.4636  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4400/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 00:36:56,976] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+4600 2.248293 9.4716  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4600/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 00:55:49,843] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+4800 2.386535 10.8757  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_4800/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 01:14:52,011] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+5000 2.192396 8.9567  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+5200 2.207431 9.0923  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+5400 2.270228 9.6816  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+5600 2.616012 13.6811  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5600/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 02:30:58,356] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+5800 2.049699 7.7656  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_5800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+6000 1.956879 7.0772  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_6000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_6000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+6200 2.307112 10.0454  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_6200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_2_step_6200/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 03:27:33,874] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+6400 2.218966 9.1978  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_6400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_6400/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 03:46:53,386] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+6600 1.703074 5.4908  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_6600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_6600/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 04:05:52,477] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+6800 2.057481 7.8262  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_6800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_6800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+7000 1.939699 6.9567  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+7200 1.944804 6.9923  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7200/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 05:02:34,149] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+7400 1.634320 5.1260  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7400/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 05:21:19,264] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+7600 2.353872 10.5262  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+7800 1.888327 6.6083  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_7800/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 05:58:49,900] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+8000 2.927214 18.6755  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_8000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_8000/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 06:17:35,137] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+8200 2.047562 7.7490  3, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_8200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_3_step_8200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+8400 1.752059 5.7665  4, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_4_step_8400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_4_step_8400/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 06:55:31,016] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+saving trainable to /data/rwkv/tmp/distill_ultrachat_1280_1535
+8600 2.160365 8.6743  4, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_4_step_8600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_1280_1535/epoch_4_step_8600/Llama3.18BInstructRWKV8Layers.pth
+[2024-09-16 07:14:23,668] [WARNING] [stage3.py:2069:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+Detected KeyboardInterrupt, attempting graceful shutdown ...

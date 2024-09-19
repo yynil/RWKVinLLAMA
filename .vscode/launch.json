@@ -5,18 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python 调试程序: 当前文件",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python 调试程序: nccl_gather_server",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/server/teacher_server_nccl_gather.py",
             "console": "integratedTerminal",
             "args": [
-                "--model_id", "/home/yueyulin/model/llama-3.1-8B-Instruct/", 
-                "--batch", "1", 
-                "--length", "512", 
-                "--size", "2", 
-                "--output_all_hiddens" ,
-                "--device_id", "3"
+                "--model_id",
+                "/home/yueyulin/model/llama-3.1-8B-Instruct/",
+                "--batch",
+                "1",
+                "--length",
+                "512",
+                "--size",
+                "2",
+                "--output_all_hiddens",
+                "--device_id",
+                "3"
             ],
             "justMyCode": true
         },
@@ -27,7 +39,6 @@
             "program": "${workspaceFolder}/rwkv_llama/test_custom_cache_rwkv.py",
             "console": "integratedTerminal",
             "justMyCode": false
-
-        }
+        },
     ]
 }

@@ -1,0 +1,150 @@
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+200 2.488875 12.0477  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_200/Llama3.18BInstructRWKV8Layers.pth
+/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/deepspeed.py:634: When saving the DeepSpeed Stage 3 checkpoint, each worker will save a shard of the checkpoint within a directory. If a single file is required after training, see https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html#deepspeed-zero-stage-3-single-file for instructions.
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+400 2.337569 10.3560  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+600 2.035002 7.6523  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+800 2.009856 7.4622  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+1000 2.291284 9.8876  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+1200 1.820326 6.1739  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+1400 2.095508 8.1296  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+1600 2.216182 9.1722  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+1800 1.781825 5.9407  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_1800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+2000 2.195650 8.9858  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+2200 1.797953 6.0373  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+2400 1.765491 5.8444  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+2600 1.281028 3.6003  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+2800 1.626359 5.0853  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_2800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+3000 1.921700 6.8326  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+3200 1.307735 3.6978  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+3400 2.051228 7.7774  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+3600 1.709095 5.5240  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+3800 1.213933 3.3667  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_3800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+4000 1.452912 4.2755  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+4200 1.727656 5.6274  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+4400 1.330243 3.7820  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+4600 1.399459 4.0530  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+4800 1.600518 4.9556  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_4800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+5000 1.420133 4.1377  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+5200 1.700182 5.4749  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+5400 1.252006 3.4974  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+5600 1.541325 4.6708  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+5800 1.404063 4.0717  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_5800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+6000 1.724667 5.6107  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+6200 1.181448 3.2591  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+6400 1.673361 5.3300  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6400/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+6600 1.119580 3.0636  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6600 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6600/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+6800 1.162379 3.1975  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6800 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_6800/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+7000 1.389493 4.0128  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_7000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_7000/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+7200 1.566418 4.7895  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_7200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_7200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024
+7400 1.569286 4.8032  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_7400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_1_1024/epoch_0_step_7400/Llama3.18BInstructRWKV8Layers.pth
+Detected KeyboardInterrupt, attempting graceful shutdown ...

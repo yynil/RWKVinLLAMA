@@ -1,0 +1,12 @@
+
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])
+log_probs_student shape is torch.Size([16, 256, 128256]), probs_teacher shape is torch.Size([16, 256, 128256])

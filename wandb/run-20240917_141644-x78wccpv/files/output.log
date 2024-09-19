@@ -1,0 +1,10 @@
+
+/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/deepspeed.py:634: When saving the DeepSpeed Stage 3 checkpoint, each worker will save a shard of the checkpoint within a directory. If a single file is required after training, see https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html#deepspeed-zero-stage-3-single-file for instructions.
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_3073_4096
+200 1.275978 3.5822  1, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_3073_4096/epoch_1_step_200 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_3073_4096/epoch_1_step_200/Llama3.18BInstructRWKV8Layers.pth
+saving trainable to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_3073_4096
+400 0.892617 2.4415  2, now saving...
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_3073_4096/epoch_2_step_400 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill_ultrachat_llamamlp_step_1k_3073_4096/epoch_2_step_400/Llama3.18BInstructRWKV8Layers.pth

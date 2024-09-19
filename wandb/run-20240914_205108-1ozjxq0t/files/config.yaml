@@ -1,0 +1,453 @@
+wandb_version: 1
+
+config_file:
+  desc: null
+  value: configs/test_hybrid_full_logits_rwkv_att_only.yaml
+train_data:
+  desc: null
+  value: null
+c4_data:
+  desc: null
+  value: null
+languages:
+  desc: null
+  value:
+  - en
+  - zh
+train_datas:
+  desc: null
+  value: null
+preprocessed_data:
+  desc: null
+  value:
+  - /data/rwkv/data/ultrachat_200k_ds_4k_sub_lengths/length__768_1023
+output_dir:
+  desc: null
+  value: /data/rwkv/tmp/distill_ultrachat_768_1023
+num_epochs:
+  desc: null
+  value: 1
+max_seq_length:
+  desc: null
+  value: 1024
+num_devices:
+  desc: null
+  value: 6
+dropout:
+  desc: null
+  value: 0.01
+grad_cp:
+  desc: null
+  value: 1
+save_per_batches:
+  desc: null
+  value: 10000
+my_exit:
+  desc: null
+  value: 300
+weight_decay:
+  desc: null
+  value: 0.1
+lr_init:
+  desc: null
+  value: 0.0001
+lr_final:
+  desc: null
+  value: 0.0005
+beta1:
+  desc: null
+  value: 0.9
+beta2:
+  desc: null
+  value: 0.95
+layerwise_lr:
+  desc: null
+  value: 1
+adam_eps:
+  desc: null
+  value: 1.0e-08
+warmup_steps:
+  desc: null
+  value: 200
+epoch_begin:
+  desc: null
+  value: 0
+epoch_count:
+  desc: null
+  value: 150
+epoch_save:
+  desc: null
+  value: 1
+max_epochs:
+  desc: null
+  value: 150
+check_val_every_n_epoch:
+  desc: null
+  value: 1
+val_check_interval:
+  desc: null
+  value: 5000
+num_sanity_val_steps:
+  desc: null
+  value: 0
+log_every_n_steps:
+  desc: null
+  value: 200
+enable_checkpointing:
+  desc: null
+  value: false
+accumulate_grad_batches:
+  desc: null
+  value: 1
+gradient_clip_val:
+  desc: null
+  value: 1.0
+num_nodes:
+  desc: null
+  value: 1
+micro_bsz:
+  desc: null
+  value: 6
+real_bsz:
+  desc: null
+  value: 36
+my_pile_stage:
+  desc: null
+  value: 0
+my_pile_edecay:
+  desc: null
+  value: 0
+weight_decay_final:
+  desc: null
+  value: -1
+proj_dir:
+  desc: null
+  value: null
+eval_every_steps:
+  desc: null
+  value: 100
+wandb:
+  desc: null
+  value: hybrid_trainer_768_1023
+run_name:
+  desc: null
+  value: hybrid_trainer_a800
+strategy:
+  desc: null
+  value: deepspeed_stage_3_offload
+ds_bucket_mb:
+  desc: null
+  value: 200
+my_qa_mask:
+  desc: null
+  value: 0
+optim:
+  desc: null
+  value: adam
+train_type:
+  desc: null
+  value: ''
+skip_steps:
+  desc: null
+  value: 0
+ckpt_file:
+  desc: null
+  value: /data/rwkv/tmp/distill_ultrachat_512_767/last.ckpt/ultrachat_512_767.pth
+my_pos_emb:
+  desc: null
+  value: 0
+head_size_a:
+  desc: null
+  value: 64
+head_size_divisor:
+  desc: null
+  value: 8
+ctx_len:
+  desc: null
+  value: 4096
+n_layer:
+  desc: null
+  value: 32
+n_embd:
+  desc: null
+  value: 4096
+dim_att:
+  desc: null
+  value: 4096
+dim_ffn:
+  desc: null
+  value: 14336
+pre_ffn:
+  desc: null
+  value: 0
+head_qk:
+  desc: null
+  value: 0
+tiny_att_dim:
+  desc: null
+  value: 0
+tiny_att_layer:
+  desc: null
+  value: -999
+vocab_size:
+  desc: null
+  value: 128256
+layers:
+  desc: null
+  value:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+  - 31
+pad_id:
+  desc: null
+  value: 128009
+betas:
+  desc: null
+  value:
+  - 0.9
+  - 0.95
+kl_weight:
+  desc: null
+  value: 0.1
+ce_weight:
+  desc: null
+  value: 1
+model_file:
+  desc: null
+  value: Llama3.18BInstructRWKV8Layers
+teacher_client_mode:
+  desc: null
+  value: true
+nccl_file:
+  desc: null
+  value: nccl.txt
+num_groups:
+  desc: null
+  value: 2
+is_hidden_align:
+  desc: null
+  value: false
+is_sft:
+  desc: null
+  value: false
+is_llama_ffn:
+  desc: null
+  value: true
+is_rwkv_att_only:
+  desc: null
+  value: true
+my_timestamp:
+  desc: null
+  value: '2024-09-14 20:49:40'
+epoch_steps:
+  desc: null
+  value: 2518
+world_size:
+  desc: null
+  value: 6
+rank:
+  desc: null
+  value: 0
+nccl_id:
+  desc: null
+  value:
+  - 122
+  - 116
+  - -79
+  - 49
+  - -72
+  - -35
+  - -9
+  - -29
+  - 2
+  - 0
+  - -104
+  - 117
+  - -84
+  - 18
+  - 18
+  - 42
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 64
+  - -89
+  - -37
+  - -121
+  - -19
+  - 127
+  - 0
+  - 0
+  - -48
+  - -51
+  - 18
+  - 98
+  - -1
+  - 127
+  - 0
+  - 0
+  - 34
+  - -106
+  - 57
+  - -76
+  - 61
+  - 14
+  - 33
+  - 94
+  - 0
+  - 1
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - -54
+  - -10
+  - 113
+  - -76
+  - -56
+  - -43
+  - -24
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 80
+  - -50
+  - -36
+  - 50
+  - -20
+  - 127
+  - 0
+  - 0
+  - 112
+  - 77
+  - -71
+  - -121
+  - -19
+  - 127
+  - 0
+  - 0
+  - 80
+  - -50
+  - -36
+  - 50
+  - -20
+  - 127
+  - 0
+  - 0
+  - 112
+  - 77
+  - -71
+  - -121
+  - -19
+  - 127
+  - 0
+  - 0
+  - -82
+  - 0
+  - 94
+  - 2
+  - 0
+  - 0
+  - 0
+  - 0
+server_rank:
+  desc: null
+  value: 3
+_wandb:
+  desc: null
+  value:
+    python_version: 3.11.9
+    cli_version: 0.17.6
+    framework: huggingface
+    huggingface_version: 4.44.2
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1726318268
+    t:
+      1:
+      - 1
+      - 9
+      - 11
+      - 49
+      - 51
+      - 55
+      - 71
+      - 103
+      2:
+      - 1
+      - 9
+      - 11
+      - 49
+      - 51
+      - 55
+      - 71
+      - 103
+      3:
+      - 13
+      - 16
+      - 23
+      - 61
+      4: 3.11.9
+      5: 0.17.6
+      6: 4.44.2
+      8:
+      - 5
+      13: linux-x86_64

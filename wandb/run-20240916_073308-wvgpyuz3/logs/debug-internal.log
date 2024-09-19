@@ -1,0 +1,19 @@
+2024-09-16 07:33:08,601 INFO    StreamThr :513186 [internal.py:wandb_internal():85] W&B internal server running at pid: 513186, started at: 2024-09-16 07:33:08.600662
+2024-09-16 07:33:08,604 DEBUG   HandlerThread:513186 [handler.py:handle_request():158] handle_request: status
+2024-09-16 07:33:08,623 INFO    WriterThread:513186 [datastore.py:open_for_write():87] open: /home/rwkv/github/RWKVinLLAMA/wandb/run-20240916_073308-wvgpyuz3/run-wvgpyuz3.wandb
+2024-09-16 07:33:08,623 DEBUG   SenderThread:513186 [sender.py:send():391] send: header
+2024-09-16 07:33:08,628 DEBUG   SenderThread:513186 [sender.py:send():391] send: run
+2024-09-16 07:33:09,859 INFO    SenderThread:513186 [dir_watcher.py:__init__():211] watching files in: /home/rwkv/github/RWKVinLLAMA/wandb/run-20240916_073308-wvgpyuz3/files
+2024-09-16 07:33:09,859 INFO    SenderThread:513186 [sender.py:_start_run_threads():1200] run started: wvgpyuz3 with start time 1726443188.600441
+2024-09-16 07:33:10,107 DEBUG   HandlerThread:513186 [handler.py:handle_request():158] handle_request: shutdown
+2024-09-16 07:33:10,107 INFO    HandlerThread:513186 [handler.py:finish():882] shutting down handler
+2024-09-16 07:33:10,628 INFO    WriterThread:513186 [datastore.py:close():296] close: /home/rwkv/github/RWKVinLLAMA/wandb/run-20240916_073308-wvgpyuz3/run-wvgpyuz3.wandb
+2024-09-16 07:33:10,860 INFO    SenderThread:513186 [sender.py:finish():1631] shutting down sender
+2024-09-16 07:33:10,860 INFO    SenderThread:513186 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-09-16 07:33:11,860 INFO    SenderThread:513186 [dir_watcher.py:finish():388] scan: /home/rwkv/github/RWKVinLLAMA/wandb/run-20240916_073308-wvgpyuz3/files
+2024-09-16 07:33:11,860 INFO    SenderThread:513186 [dir_watcher.py:finish():402] scan save: /home/rwkv/github/RWKVinLLAMA/wandb/run-20240916_073308-wvgpyuz3/files/config.yaml config.yaml
+2024-09-16 07:33:11,860 INFO    SenderThread:513186 [file_pusher.py:finish():169] shutting down file pusher
+2024-09-16 07:33:11,861 INFO    SenderThread:513186 [file_pusher.py:join():175] waiting for file pusher
+2024-09-16 07:33:13,369 INFO    wandb-upload_0:513186 [upload_job.py:push():130] Uploaded file /home/rwkv/github/RWKVinLLAMA/wandb/run-20240916_073308-wvgpyuz3/files/config.yaml
+2024-09-16 07:33:13,861 INFO    SenderThread:513186 [file_stream.py:finish():601] file stream finish called
+2024-09-16 07:33:14,623 INFO    SenderThread:513186 [file_stream.py:finish():605] file stream finish is done

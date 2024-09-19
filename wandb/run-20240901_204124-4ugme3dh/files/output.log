@@ -1,0 +1,153 @@
+saving trainable to /data/rwkv/tmp/distill-en-zh-stage-2
+2000 29.354641 5604780222398.0176  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill-en-zh-stage-2/epoch_0_step_2000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill-en-zh-stage-2/epoch_0_step_2000/Llama3.18BInstructRWKV8Layers.pth
+/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/deepspeed.py:634: When saving the DeepSpeed Stage 3 checkpoint, each worker will save a shard of the checkpoint within a directory. If a single file is required after training, see https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html#deepspeed-zero-stage-3-single-file for instructions.
+saving trainable to /data/rwkv/tmp/distill-en-zh-stage-2
+4000 29.483015 6372513300875.0947  0, now saving...
+save trainable parameters to /data/rwkv/tmp/distill-en-zh-stage-2/epoch_0_step_4000 pretrained from Llama3.18BInstructRWKV8Layers
+save trainable parameters to /data/rwkv/tmp/distill-en-zh-stage-2/epoch_0_step_4000/Llama3.18BInstructRWKV8Layers.pth
+Validation DataLoader 0:   0%|                                                                                       | 0/720 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/rwkv/github/RWKVinLLAMA/train_scripts/train_hybrid.py", line 227, in <module>
+    trainer.fit(model,
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 538, in fit
+    call._call_and_handle_interrupt(
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 46, in _call_and_handle_interrupt
+    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 105, in launch
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 574, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 981, in _run
+    results = self._run_stage()
+              ^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 1025, in _run_stage
+    self.fit_loop.run()
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 205, in run
+    self.advance()
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 363, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 141, in run
+    self.on_advance_end(data_fetcher)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 295, in on_advance_end
+    self.val_loop.run()
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/utilities.py", line 178, in _decorator
+    return loop_run(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/evaluation_loop.py", line 135, in run
+    self._evaluation_step(batch, batch_idx, dataloader_idx, dataloader_iter)
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/evaluation_loop.py", line 396, in _evaluation_step
+    output = call._call_strategy_hook(trainer, hook_name, *step_args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 319, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 410, in validation_step
+    return self._forward_redirection(self.model, self.lightning_module, "validation_step", *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 640, in __call__
+    wrapper_output = wrapper_module(*args, **kwargs)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/utils/nvtx.py", line 15, in wrapped_fn
+    ret_val = func(*args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/runtime/engine.py", line 1846, in forward
+    loss = self.module(*inputs, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1603, in _call_impl
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 633, in wrapped_forward
+    out = method(*_args, **_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/github/RWKVinLLAMA/rwkv_llama/hybrid_model.py", line 249, in validation_step
+    teacher_loss = F.cross_entropy(teacher_logits, labels)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/functional.py", line 3104, in cross_entropy
+    return torch._C._nn.cross_entropy_loss(input, target, weight, _Reduction.get_enum(reduction), ignore_index, label_smoothing)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Expected target size [6, 128256], got [6, 2048]
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/rwkv/github/RWKVinLLAMA/train_scripts/train_hybrid.py", line 227, in <module>
+[rank0]:     trainer.fit(model,
+[rank0]:     ^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 538, in fit
+[rank0]:     call._call_and_handle_interrupt(
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 46, in _call_and_handle_interrupt
+[rank0]:     return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 105, in launch
+[rank0]:     return function(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 574, in _fit_impl
+[rank0]:     self._run(model, ckpt_path=ckpt_path)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 981, in _run
+[rank0]:     results = self._run_stage()
+[rank0]:               ^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/trainer.py", line 1025, in _run_stage
+[rank0]:     self.fit_loop.run()
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 205, in run
+[rank0]:     self.advance()
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/fit_loop.py", line 363, in advance
+[rank0]:     self.epoch_loop.run(self._data_fetcher)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 141, in run
+[rank0]:     self.on_advance_end(data_fetcher)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 295, in on_advance_end
+[rank0]:     self.val_loop.run()
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/utilities.py", line 178, in _decorator
+[rank0]:     return loop_run(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/evaluation_loop.py", line 135, in run
+[rank0]:     self._evaluation_step(batch, batch_idx, dataloader_idx, dataloader_iter)
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/loops/evaluation_loop.py", line 396, in _evaluation_step
+[rank0]:     output = call._call_strategy_hook(trainer, hook_name, *step_args)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/trainer/call.py", line 319, in _call_strategy_hook
+[rank0]:     output = fn(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 410, in validation_step
+[rank0]:     return self._forward_redirection(self.model, self.lightning_module, "validation_step", *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 640, in __call__
+[rank0]:     wrapper_output = wrapper_module(*args, **kwargs)
+[rank0]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/utils/nvtx.py", line 15, in wrapped_fn
+[rank0]:     ret_val = func(*args, **kwargs)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/deepspeed/runtime/engine.py", line 1846, in forward
+[rank0]:     loss = self.module(*inputs, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1603, in _call_impl
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/pytorch_lightning/strategies/strategy.py", line 633, in wrapped_forward
+[rank0]:     out = method(*_args, **_kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/github/RWKVinLLAMA/rwkv_llama/hybrid_model.py", line 249, in validation_step
+[rank0]:     teacher_loss = F.cross_entropy(teacher_logits, labels)
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/rwkv/anaconda3/envs/torch_env/lib/python3.11/site-packages/torch/nn/functional.py", line 3104, in cross_entropy
+[rank0]:     return torch._C._nn.cross_entropy_loss(input, target, weight, _Reduction.get_enum(reduction), ignore_index, label_smoothing)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: RuntimeError: Expected target size [6, 128256], got [6, 2048]
