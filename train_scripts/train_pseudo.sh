@@ -1,24 +1,22 @@
 #!/bin/bash
 
 # 默认值
-MIN=1
-MAX=256
-BS=32
-WARMUP=600
+BS=5
+WARMUP=1000
 VAL_CHECK_INTERVAL=5000
 NUM_DEVICES=6
 LR_INIT=1e-4
 LR_FINAL=5e-4
 DROPOUT=0.01
-LOG_EVERY_N_STEPS=20000
+LOG_EVERY_N_STEPS=200
 OUTPUT_ALL_HIDDENS=“”
-MAX_LENGTH=256
+MAX_LENGTH=2048
 
 # 新增的默认路径前缀
-TRAIN_PREFIX="/home/rwkv/preprocessed_"
-VAL_PREFIX=""
-OUTPUT_PREFIX="/data/rwkv/tmp/distill-en-zh-stage-2_"
-CONFIG_FILE="configs/test_hybrid_full_logits_stage_2.yaml"
+INPUT_IDS_FILE="/data/rwkv/data/pseudo_labels/input_ids.pt"
+LABELS_FILE="/data/rwkv/data/pseudo_labels/labels.pt"
+OUTPUT_PREFIX="/data/rwkv/tmp/distill-en-zh-pseudo_labels"
+CONFIG_FILE="/home/rwkv/github/RWKVinLLAMA/configs/test_hybrid_full_logits_llamamlp.yaml"
 CKPT_FILE=""
 
 # 解析命名参数
@@ -44,9 +42,9 @@ while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:h:A:" opt; do
     ;;
     l) LOG_EVERY_N_STEPS="$OPTARG"
     ;;
-    t) TRAIN_PREFIX="$OPTARG"
+    t) INPUT_IDS_FILE="$OPTARG"
     ;;
-    a) VAL_PREFIX="$OPTARG"
+    a) LABELS_FILE="$OPTARG"
     ;;
     o) OUTPUT_PREFIX="$OPTARG"
     ;;
@@ -64,15 +62,9 @@ while getopts ":m:M:b:w:v:n:i:f:d:l:t:a:o:c:k:h:A:" opt; do
   esac
 done
 
-# 构建完整的路径
-BASE_DIR_TRAIN="${TRAIN_PREFIX}${MIN}_${MAX}"
-if [ -z "$VAL_PREFIX" ]; then
-  BASE_DIR_VAL=""
-else
-  BASE_DIR_VAL="${VAL_PREFIX}${MIN}_${MAX}"
-fi
 
-OUTPUT_DIR="${OUTPUT_PREFIX}${MIN}_${MAX}"
+
+OUTPUT_DIR="${OUTPUT_PREFIX}"
 
 echo "参数设置："
 echo "MIN=$MIN, MAX=$MAX, BS=$BS, WARMUP=$WARMUP, VAL_CHECK_INTERVAL=$VAL_CHECK_INTERVAL"
@@ -97,7 +89,8 @@ WKV=fla CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.p
     --config_file $CONFIG_FILE \
     --lr_init $LR_INIT \
     --micro_bsz $BS \
-    --preprocessed_data $BASE_DIR_TRAIN $BASE_DIR_VAL \
+    --input_ids_file $INPUT_IDS_FILE \
+    --labels_file $LABELS_FILE \
     --dropout $DROPOUT \
     --strategy deepspeed_stage_3_offload \
     --log_every_n_steps $LOG_EVERY_N_STEPS \
@@ -105,4 +98,5 @@ WKV=fla CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.p
     --warmup_steps $WARMUP \
     $CKPT_FILE \
     --val_check_interval $VAL_CHECK_INTERVAL \
-    --wandb hybrid_trainer_${MIN}_${MAX}
+    --wandb hybrid_pseudo_trainer_ULTRACHAT_ULTRAFEEDBACK \
+    --max_epochs 2

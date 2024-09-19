@@ -99,6 +99,7 @@ class HybridModel(pl.LightningModule):
                 att.time_mixer.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
                 att.time_mixer.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
                 att.time_mixer.output.weight.data = llama_layer.self_attn.o_proj.weight.data
+                del llama_layer.self_attn
                 llama_layer.self_attn = att
                 return decoder
             else:
@@ -378,7 +379,7 @@ class HybridModel(pl.LightningModule):
 
                 # 计算平均 KL 散度，只考虑非 -100 的位置
                 kl_loss = kl_div.sum() / num_valid_elements
-
+                # kl_loss = F.kl_div(F.log_softmax(student_logits, dim=-1), targets, reduction='batchmean')
                 loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
                 self.log('train_loss', loss)
                 returned_loss = {}

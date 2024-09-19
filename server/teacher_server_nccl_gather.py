@@ -18,7 +18,11 @@ logging.basicConfig(
 def handle_request_sync(model, input_ids,eos_id,output_all_hiddens=False):
     logging.info(f"Start inference,input_ids shape is {input_ids.shape}, eos_id is {eos_id} input_ids {input_ids},output_all_hiddens is {output_all_hiddens}")  
     with torch.no_grad():
-        results =  model(input_ids,output_hidden_states=output_all_hiddens)
+        attention_mask = torch.ne(input_ids,eos_id).to(input_ids.device)
+        results =  model(input_ids,
+                         attention_mask=attention_mask,
+                         output_hidden_states=output_all_hiddens,
+                         use_cache=False)
     logging.info(f"Finished inference,result logits shape is {results.logits.shape}")
     return results.logits,results.hidden_states
 

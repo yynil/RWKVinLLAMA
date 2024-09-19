@@ -32,6 +32,8 @@ def create_arg_parser():
     parser.add_argument('--languages', type=str,nargs='+',default=['en','zh'],help='languages to train the model')
     parser.add_argument('--train_datas',type=str,nargs='+',help='train data directories')
     parser.add_argument('--preprocessed_data',type=str,nargs='+',help='preprocessed data directory')
+    parser.add_argument('--input_ids_file', type=str, help='input ids file')
+    parser.add_argument('--labels_file', type=str, help='labels file')
     parser.add_argument('--output_dir', type=str, default='/data/rwkv/tmp',help='directory to save the trained model')
     parser.add_argument('--num_epochs', type=int, default=1, help='number of epochs to train the model')
     parser.add_argument('--max_seq_length', type=int, default=512, help='maximum sequence length to train the model')
@@ -161,7 +163,21 @@ if __name__ == '__main__':
                     param.requires_grad = False
                 print(name, param.shape, param.requires_grad)
     import datasets
-    if args.train_data is not None:
+    if args.input_ids_file is not None and args.labels_file is not None:
+        print(f'load data from {args.input_ids_file} and {args.labels_file}')
+        input_ids = torch.load(args.input_ids_file)
+        labels = torch.load(args.labels_file)
+        print(input_ids.size())
+        print(labels.size())
+        from data.pseudo_dataset import TextDataset
+        ds = TextDataset(input_ids, labels, args.pad_id)
+        train_dataloader = torch.utils.data.DataLoader(ds, 
+                                                batch_size=args.micro_bsz,
+                                                shuffle=True, 
+                                                num_workers=4, 
+                                                pin_memory=True)
+        val_dataloader = None
+    elif args.train_data is not None:
         print(f'load train data from {args.train_data}')
         from datasets import load_from_disk
         ds = load_from_disk(args.train_data)

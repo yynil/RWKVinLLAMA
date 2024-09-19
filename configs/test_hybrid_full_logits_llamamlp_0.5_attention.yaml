@@ -5,7 +5,6 @@ RWKV:
 Llama:
   model_id: /data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/
 is_llama_ffn: True
-is_rwkv_att_only: True
 kl_weight: 0.1
 ce_weight: 1
 model_file: Llama3.18BInstructRWKV8Layers

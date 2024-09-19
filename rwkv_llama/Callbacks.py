@@ -5,27 +5,28 @@ import torch
 import os
 
 def save_trainable_parameters(model, trainable_dir_output, model_filename):
-    print(f"save trainable parameters to {trainable_dir_output} pretrained from {model_filename}")
-    # 创建保存目录
-    os.makedirs(trainable_dir_output, exist_ok=True)
+    print('Do nothing')
+    # print(f"save trainable parameters to {trainable_dir_output} pretrained from {model_filename}")
+    # # 创建保存目录
+    # os.makedirs(trainable_dir_output, exist_ok=True)
     
-    # 获取可训练的参数
-    trainable_params = []
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            trainable_params.append(param)
+    # # 获取可训练的参数
+    # trainable_params = []
+    # for name, param in model.named_parameters():
+    #     if param.requires_grad:
+    #         trainable_params.append(param)
     
-    # 判断是否有可训练的参数
-    if len(trainable_params) == 0:
-        print("没有可训练的参数")
-        return
+    # # 判断是否有可训练的参数
+    # if len(trainable_params) == 0:
+    #     print("没有可训练的参数")
+    #     return
 
-    # 保存可训练的参数
-    save_filename = os.path.basename(model_filename) + '.pth'
-    save_path = os.path.join(trainable_dir_output, save_filename)
-    state_dict = {name: param.data for name, param in model.named_parameters() if param.requires_grad}
-    torch.save(state_dict, save_path)
-    print(f"save trainable parameters to {save_path}")
+    # # 保存可训练的参数
+    # save_filename = os.path.basename(model_filename) + '.pth'
+    # save_path = os.path.join(trainable_dir_output, save_filename)
+    # state_dict = {name: param.data for name, param in model.named_parameters() if param.requires_grad}
+    # torch.save(state_dict, save_path)
+    # print(f"save trainable parameters to {save_path}")
 class TrainerCallback(pl.Callback):
     def __init__(self, args):
         super().__init__()
