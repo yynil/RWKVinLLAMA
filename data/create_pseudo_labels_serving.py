@@ -8,7 +8,9 @@ from tqdm import tqdm
 import json
 # from vllm import LLM, SamplingParams
 from openai import OpenAI
-
+import threading
+from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
 
 # Modify OpenAI's API key and API base to use vLLM's API server.
 
@@ -76,41 +78,56 @@ def handle_conversations(conversations: List[str],model,eos_token,conversation_f
 
 
 
-def process_file(file,  output_dir, from_pct,to_pct):
+def process_file(file, output_dir, from_pct, to_pct, max_workers=10):
     try:
-        
-        client = OpenAI(
-
-            # defaults to os.environ.get("OPENAI_API_KEY")
-
-            api_key=openai_api_key,
-
-            base_url=openai_api_base,
-
-        )
+        client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
         models = client.models.list()
-
         model = models.data[0].id
         conversation_fn = custom_chat_template_llama if 'llama' in model.lower() else custom_chat_template_qwen
         eos_token = '<|eot_id|>' if 'llama' in model.lower() else '<|im_end|>'
+        print(f'model is {model} and eos_token is {eos_token} and conversation_fn is {conversation_fn}')
+
+        print(f'开始处理文件 {file}')
         with open(file, 'r') as f:
             lines = f.readlines()
         from_idx = int(from_pct * len(lines))
         to_idx = int(to_pct * len(lines))
         lines = lines[from_idx:to_idx]
-        progress_bar = tqdm(lines, desc='processing ' + file)
+        
         output_file_name = os.path.basename(file)
+        output_file_name = f'{output_file_name[:-6]}_pseudo_labels_{from_pct}_{to_pct}.jsonl'
         output_file_name = os.path.join(output_dir, output_file_name)
-        with open(output_file_name, 'w') as f:
-            for line in progress_bar:
-                line = line.strip()
-                if len(line) == 0:
-                    continue
-                conversations = json.loads(line)['data']
-                new_conversations = handle_conversations(conversations,model,eos_token, conversation_fn,client)
-                f.write(json.dumps({'data': new_conversations}) + '\n')
-    except Exception as e:
-        print(f"Error processing file {file} on device {i}: {e}")
+        print(f'output_file_name is {output_file_name}')
+        # 在主线程中打开文件
+        with open(output_file_name, 'w') as output_file:
+            # 创建线程池
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # 使用tqdm创建进度条
+                futures = []
+                for line in lines:
+                    future = executor.submit(process_line, line, model, eos_token, conversation_fn, client)
+                    futures.append(future)
+                
+                # 使用tqdm显示进度
+                for future in tqdm(futures, total=len(futures), desc=f"处理文件 {file}"):
+                    result = future.result()
+                    if result:
+                        # 在主线程中写入结果
+                        json.dump({'data': result}, output_file)
+                        output_file.write('\n')
+                        output_file.flush()  # 确保数据被立即写入磁盘
+        
+        print(f'文件 {file} 处理完成')
+    except Exception as ex:
+        print(f"处理文件 {file} 时发生错误: {ex}")
+
+def process_line(line, model, eos_token, conversation_fn, client):
+    line = line.strip()
+    if len(line) == 0:
+        return None
+    conversations = json.loads(line)['data']
+    new_conversations = handle_conversations(conversations, model, eos_token, conversation_fn, client)
+    return new_conversations if len(new_conversations) > 0 else None
 
 def main():
     parser = argparse.ArgumentParser()
