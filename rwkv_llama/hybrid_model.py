@@ -117,7 +117,10 @@ class HybridModel(pl.LightningModule):
         for layer_idx in range(transformer_model.config.num_hidden_layers):
             if layer_idx in rwkv_args.layers:
                 decoder = init_block_params(rwkv_args,layer_idx,transformer_model.model.layers[layer_idx])
+                former_decoder = transformer_model.model.layers[layer_idx]
                 transformer_model.model.layers[layer_idx] = decoder
+                del former_decoder
+                
         self.model = transformer_model
         self.args = rwkv_args
         self.teacher_model = teacher_model
@@ -130,6 +133,7 @@ class HybridModel(pl.LightningModule):
         if self.tokenizer is not None:
             if 'pad_token_id' not in self.tokenizer.__dict__:
                 self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+        torch.cuda.empty_cache()
     def forward(
         self,
         input_ids,
@@ -275,6 +279,7 @@ class HybridModel(pl.LightningModule):
                 self.stream.synchronize()
                 teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
                 logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
+                teacher_cross_entropy_loss = None
                 if args.is_hidden_align:
                     logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
                     self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
@@ -285,6 +290,7 @@ class HybridModel(pl.LightningModule):
                     teacher_outputs = teacher_model(
                         input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
                 teacher_logits = teacher_outputs.logits
+                teacher_cross_entropy_loss = teacher_outputs.loss
                 if args.is_hidden_align:
                     teacher_hidden_states = teacher_outputs.hidden_states
             #calculate teacher's loss and perplexity
@@ -335,6 +341,7 @@ class HybridModel(pl.LightningModule):
                 self.stream.synchronize()
                 teacher_logits = torch.as_tensor(self.recv_buffer, device=input_ids.device, dtype=torch.float32)
                 logging.info(f'rank {args.rank} is receiving teacher_logits from server, shape is {teacher_logits.shape}')
+                teacher_cross_entropy_loss = None
                 if args.is_hidden_align:
                     logging.info(f'rank {args.rank} is receiving teacher_hidden_states from server')
                     self.comm.recv(self.teacher_hidden_states_buffer.data.ptr, self.teacher_hidden_states_buffer.size, nccl.NCCL_FLOAT, args.server_rank, self.stream.ptr)
@@ -347,6 +354,7 @@ class HybridModel(pl.LightningModule):
                     teacher_outputs = teacher_model(
                         input_ids=input_ids, attention_mask=attention_mask, labels=labels, use_cache=False,output_hidden_states=args.is_hidden_align)
                 teacher_logits = teacher_outputs.logits
+                teacher_cross_entropy_loss = teacher_outputs.loss
                 if args.is_hidden_align:
                     teacher_hidden_states = teacher_outputs.hidden_states    
                     teacher_hidden_states = torch.cat(teacher_hidden_states[1:], dim=0)#(b*layers,t,hidden_size)
@@ -357,35 +365,38 @@ class HybridModel(pl.LightningModule):
             if not args.is_hidden_align:
                 # 假设 labels 是输入的真实标签
                 targets = F.softmax(teacher_logits, dim=-1)
+                del teacher_logits
+                torch.cuda.empty_cache()
                 student_logits = student_outputs.logits
                 student_cross_entropy_loss = student_outputs.loss
+                del student_outputs
+                torch.cuda.empty_cache()
+                if args.is_all_labels_kl:
+                    kl_loss = F.kl_div(F.log_softmax(student_logits, dim=-1), targets, reduction='batchmean')
+                else:
+                    # 创建一个掩码，标记不是 -100 的位置
+                    mask = (labels != -100).float()
 
-                # 创建一个掩码，标记不是 -100 的位置
-                mask = (labels != -100).float()
+                    # 计算 log_softmax，但只在非 -100 的位置
+                    log_probs_student = F.log_softmax(student_logits, dim=-1) * mask.unsqueeze(-1)
+                    probs_teacher = targets * mask.unsqueeze(-1)
+                    # 计算 KL 散度，忽略 -100 的位置
+                    kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
+                    kl_div = kl_div.sum(dim=-1)  # 在词汇表维度上求和
 
-                # 计算 log_softmax，但只在非 -100 的位置
-                log_probs_student = F.log_softmax(student_logits, dim=-1) * mask.unsqueeze(-1)
-                probs_teacher = targets * mask.unsqueeze(-1)
-                # del targets
-                # del student_logits
-                # torch.cuda.empty_cache()
-                # print(f'log_probs_student shape is {log_probs_student.shape}, probs_teacher shape is {probs_teacher.shape}')
-                # 计算 KL 散度，忽略 -100 的位置
-                kl_div = F.kl_div(log_probs_student, probs_teacher, reduction='none')
-                kl_div = kl_div.sum(dim=-1)  # 在词汇表维度上求和
+                    # 计算非 -100 标记的数量
+                    num_valid_elements = mask.sum()
 
-                # 计算非 -100 标记的数量
-                num_valid_elements = mask.sum()
-
-                # 计算平均 KL 散度，只考虑非 -100 的位置
-                kl_loss = kl_div.sum() / num_valid_elements
-                # kl_loss = F.kl_div(F.log_softmax(student_logits, dim=-1), targets, reduction='batchmean')
+                    # 计算平均 KL 散度，只考虑非 -100 的位置
+                    kl_loss = kl_div.sum() / num_valid_elements
                 loss = args.kl_weight * kl_loss + args.ce_weight * student_cross_entropy_loss
                 self.log('train_loss', loss)
                 returned_loss = {}
                 returned_loss['loss'] = loss
                 returned_loss['kl_loss'] = kl_loss
                 returned_loss['student_cross_entropy_loss'] = student_cross_entropy_loss
+                if teacher_cross_entropy_loss is not None:
+                    returned_loss['teacher_cross_entropy_loss'] = teacher_cross_entropy_loss
                 return returned_loss
             else:
                 logging.info(f'rank {args.rank} training with hidden states alignment')

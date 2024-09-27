@@ -138,6 +138,8 @@ class TrainerCallback(pl.Callback):
                         "Gtokens": real_step * token_per_step / 1e9}
                 if 'kl_loss' in outputs:
                     lll["kl_loss"] = outputs['kl_loss']
+                if 'teacher_cross_entropy_loss' in outputs:
+                    lll["teacher_cross_entropy_loss"] = outputs['teacher_cross_entropy_loss']
                 if 'student_cross_entropy_loss' in outputs:
                     lll["student_cross_entropy_loss"] = outputs['student_cross_entropy_loss']
                 if 'decoder_loss' in outputs:

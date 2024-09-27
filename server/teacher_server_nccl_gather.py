@@ -30,7 +30,7 @@ def handle_request_sync(model, input_ids,eos_id,output_all_hiddens=False):
 
 def main(model_id,nccl_id,device_id, size, batch,length,eos_id,output_all_hiddens=False):
     dtype = torch.bfloat16
-    model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=dtype,device=f'cuda:{device_id}')
+    model = AutoModelForCausalLM.from_pretrained(model_id).to(dtype=dtype,device=f'cuda:{device_id}',attn_implementation='flash_attention2')
     layers = model.config.num_hidden_layers
     model.eval()
     logging.info(f'init the server with nccl_id {nccl_id}')

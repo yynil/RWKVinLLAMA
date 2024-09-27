@@ -129,6 +129,7 @@ if __name__ == '__main__':
     args.is_sft = config.get('is_sft', False)
     args.is_llama_ffn = config.get('is_llama_ffn', False)
     args.is_rwkv_att_only = config.get('is_rwkv_att_only', False)
+    args.is_all_labels_kl = config.get('is_all_labels_kl', False)
     print(f'args is {args}')
     assert args.num_devices % args.num_groups == 0
     import time
@@ -137,7 +138,8 @@ if __name__ == '__main__':
 
 
     if not args.teacher_client_mode:
-        teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype)
+        teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype,attn_implementation='flash_attention_2')
+        teacher_model.eval()
     else:
         teacher_model = None
         

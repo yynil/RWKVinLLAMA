@@ -20,6 +20,7 @@ print(f"使用设备: {device}")
 
 # 设置模型路径
 model_id = "/home/yueyulin/model/llama-3.1-8B-Instruct/"
+model_id = '/data/rwkv/models/meta-llama/Meta-Llama-3.1-8B-Instruct/'
 
 # 加载tokenizer和模型
 tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -34,6 +35,15 @@ cache = HybridCache()
 
 # 准备输入
 input_text = "In a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
+input_text = "Which number is greater, 9.11 or 9.8?"
+conversations = [
+    {
+        'role': 'user',
+        'content': input_text
+    }
+]
+input_text = tokenizer.apply_chat_template(conversations,tokenize=False,add_generation_prompt=True)
+print(input_text)
 input_ids = tokenizer(input_text, return_tensors="pt").to(device)
 print(input_ids)
 

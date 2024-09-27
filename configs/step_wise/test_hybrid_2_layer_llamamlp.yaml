@@ -1,5 +1,5 @@
 RWKV:
-  layers: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+  layers: [0,2]
   grad_cp: 1
 
 Llama:
@@ -10,7 +10,7 @@ kl_weight: 0.1
 ce_weight: 1
 model_file: Llama3.18BInstructRWKV8Layers
 teach_mode:
-  is_client: True
+  is_client: False
   nccl_file: nccl.txt
   is_hidden_align: False
   num_groups: 2
