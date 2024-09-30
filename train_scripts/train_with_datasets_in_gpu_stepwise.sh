@@ -13,7 +13,8 @@ OUTPUT_DIR=“/data/rwkv/tmp/distill-en-zh_llama3_1_pseudo_ds_all_kl_div_stepwis
 ACCUMULATE_GRAD_BATCHES=4
 MAX_EPOCHS=2
 LOG_EVERY_N_STEPS=500
-while getopts ":T:l:n:m:M:b:w:v:i:f:d:t:o:c:k:h:A:" opt; do
+MODEL_TYPE="qwen"
+while getopts ":T:l:n:m:M:b:w:v:i:f:d:t:o:c:k:h:A:p:D:" opt; do
 case $opt in
     T) TRAINING_LAYER="$OPTARG"
     ;;
@@ -43,7 +44,10 @@ case $opt in
     ;;
     A) ACCUMULATE_GRAD_BATCHES="$OPTARG"
     ;;
-    
+    p) MODEL_TYPE="$OPTARG"
+    ;;
+    D) BASE_DIR_TRAIN="$OPTARG"
+    ;;
     \?) echo "无效的选项 -$OPTARG" >&2
     exit 1
     ;;
@@ -61,7 +65,7 @@ echo "LR_FINAL: $LR_FINAL"
 echo "DROPOUT: $DROPOUT"
 echo "LOG_EVERY_N_STEPS: $LOG_EVERY_N_STEPS"
 echo "STRATEGY: $STRATEGY"
-CONFIG_FILE="configs/step_wise/test_hybrid_${TRAINING_LAYER}_layer_llamamlp.yaml"
+CONFIG_FILE="configs/step_wise/test_hybrid_${TRAINING_LAYER}_layer_${MODEL_TYPE}mlp.yaml"
 OUTPUT_DIR="/data/rwkv/tmp/distill-en-zh_llama3_1_pseudo_ds_all_kl_div_stepwise_layer_${TRAINING_LAYER}"
 echo "OUTPUT_DIR: $OUTPUT_DIR"
 echo "MAX_EPOCHS: $MAX_EPOCHS"
@@ -86,4 +90,4 @@ WKV=fla CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.p
     --warmup_steps $WARMUP \
     --max_epochs $MAX_EPOCHS \
     $CKPT_FILE \
-    --wandb hybrid_trainer_llama3_1_pseudo_ds_${MAX_SEQ_LENGTH}
+    --wandb hybrid_trainer_${MODEL_TYPE}_pseudo_ds_${MAX_SEQ_LENGTH}

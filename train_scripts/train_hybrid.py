@@ -131,7 +131,6 @@ if __name__ == '__main__':
     args.is_rwkv_att_only = config.get('is_rwkv_att_only', False)
     args.is_all_labels_kl = config.get('is_all_labels_kl', False)
     print(f'args is {args}')
-    assert args.num_devices % args.num_groups == 0
     import time
     args.my_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     from hybrid_model import HybridModel
@@ -141,6 +140,7 @@ if __name__ == '__main__':
         teacher_model = AutoModelForCausalLM.from_pretrained(config['Llama']['model_id'], torch_dtype=dtype,attn_implementation='flash_attention_2')
         teacher_model.eval()
     else:
+        assert args.num_devices % args.num_groups == 0
         teacher_model = None
         
 
