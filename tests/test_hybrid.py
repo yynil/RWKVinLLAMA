@@ -25,7 +25,7 @@ import yaml
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--config', type=str, default='configs/test_hybrid.yaml')
 # args = parser.parse_args()
-config_file = 'configs/test_hybrid_full_logits_rwkv_att_only.yaml'
+config_file = 'configs/test_hybrid_full_logits_qwenmlp.yaml'
 with open(config_file) as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 print(config)
