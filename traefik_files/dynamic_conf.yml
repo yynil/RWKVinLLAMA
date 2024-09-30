@@ -1,0 +1,26 @@
+http:
+  middlewares:
+    compress:
+      compress: {}
+
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:8001"
+          - url: "http://localhost:8002"
+          - url: "http://localhost:8003"
+          - url: "http://localhost:8004"
+        sticky:
+          cookie:
+            name: backend
+            secure: true
+
+  routers:
+    to-backend:
+      rule: "PathPrefix(`/`)"
+      service: backend
+      entryPoints:
+        - web
+      middlewares:
+        - compress

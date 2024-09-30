@@ -1,0 +1,16 @@
+# 日志配置
+log:
+  level: "DEBUG"  # 日志级别：DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+  format: "common"  # 日志格式：common, json, logfmt
+
+# 访问日志配置
+accessLog: {}  # 启用访问日志,使用默认设置
+
+entryPoints:
+  web:
+    address: ":8000"
+
+providers:
+  file:
+    filename: ./dynamic_conf.yml
+    watch: true
