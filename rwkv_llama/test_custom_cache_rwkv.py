@@ -60,6 +60,7 @@ def main(config_file,ckpt_file,input_text):
         
     model = model.to(dtype=torch.bfloat16,device='cuda')
     model.eval()
+    is_llama = 'llama' in model_id.lower()
     # 使用模型生成输出,同时使用HybridCache
     with torch.no_grad():
         output = model.model.generate(
@@ -68,7 +69,7 @@ def main(config_file,ckpt_file,input_text):
             max_length=2048,
             num_return_sequences=1,
             past_key_values=cache,
-            use_cache=True,stop_strings=["<|eot_id|>"], tokenizer=tokenizer,
+            use_cache=True,
             do_sample=False,
             num_beams=1,
         )
