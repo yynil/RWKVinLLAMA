@@ -113,19 +113,38 @@ def process_file(file, output_dir, from_pct, to_pct, max_workers=10):
                     result = future.result()
                     if result:
                         # 在主线程中写入结果
-                        json.dump({'data': result}, output_file)
+                        json.dump({'data': result}, output_file,ensure_ascii=False)
                         output_file.write('\n')
                         output_file.flush()  # 确保数据被立即写入磁盘
         
         print(f'文件 {file} 处理完成')
     except Exception as ex:
+        import traceback
+        traceback.print_exc()
         print(f"处理文件 {file} 时发生错误: {ex}")
 
 def process_line(line, model, eos_token, conversation_fn, client):
     line = line.strip()
     if len(line) == 0:
         return None
-    conversations = json.loads(line)['data']
+    objects = json.loads(line)
+    if 'data' in objects:
+        conversations = objects['data']
+    elif 'conversations' in objects:
+        conversations = objects['conversations']
+        new_conversations = []
+        for conversation in conversations:
+            from_role = conversation['from']
+            if from_role != 'human':
+                value = ''
+            else:
+                value = conversation['value']
+            new_conversations.append(value)
+        if len(new_conversations[0]) == 0:
+            return None
+        conversations = new_conversations
+    else:
+        return None
     new_conversations = handle_conversations(conversations, model, eos_token, conversation_fn, client)
     return new_conversations if len(new_conversations) > 0 else None
 
