@@ -3,7 +3,10 @@ from transformers import AutoTokenizer
 import glob
 import json
 from datasets import Dataset
-
+import aiofiles
+import asyncio
+import multiprocessing as mp
+from functools import partial
 def custom_chat_template_llama(messages):
     template = ""
     for msg in messages:
@@ -30,6 +33,7 @@ def custom_chat_template_qwen(messages):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--num_processes', type=int, default=mp.cpu_count(), help='进程池中的进程数')
     parser.add_argument('--tokenizer', type=str, default='/home/yueyulin/models/Qwen2.5-7B-Instruct/')
     parser.add_argument('--input_dir', type=str, default='/home/yueyulin/data/ultrachat_pseudo_labels_qwen/')
     parser.add_argument('--max_len', type=int, default=2048)
@@ -85,37 +89,118 @@ def create_inputs_labels(conversations, tokenizer, is_llama, max_len):
     assert len(input_ids) == len(labels)
     assert len(input_ids) == max_len
     return input_ids, labels
-def main():
-    args = parse_args()
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
-    is_llama = 'llama' in args.tokenizer.lower()
-    input_dir = args.input_dir
-    output_dir = args.output_dir
-    max_len = args.max_len
-    print(tokenizer)
 
-    jsonl_files = glob.glob(f'{input_dir}/*.jsonl')
+
+def process_file(jsonl_file, tokenizer_path, max_len):
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+    is_llama = 'llama' in tokenizer_path.lower()
+    
     dict_data = {
         'input_ids': [],
         'labels': []
     }
-    for jsonl_file in jsonl_files:
-        print(jsonl_file)
-        with open(jsonl_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                if 'data' in data:
-                    try:
-                        conversations = data['data']
-                        input_ids, labels = create_inputs_labels(conversations, tokenizer, is_llama, max_len)
-                        dict_data['input_ids'].append(input_ids)
-                        dict_data['labels'].append(labels)
-                    except Exception as e:
-                        print(e)
-                        continue
-        print(f'finished one file with {len(dict_data["input_ids"])} samples')
+    print(f"开始处理文件: {jsonl_file}")
+    count = 0
+    with open(jsonl_file, 'r') as f:
+        for line in f:
+            data = json.loads(line)
+            if 'data' in data:
+                try:
+                    conversations = data['data']
+                    input_ids, labels = create_inputs_labels(conversations, tokenizer, is_llama, max_len)
+                    dict_data['input_ids'].append(input_ids)
+                    dict_data['labels'].append(labels)
+                    count += 1
+                    if count % 1000 == 0:
+                        print(f"文件 {jsonl_file} 已处理 {count} 条数据")
+                except Exception as e:
+                    print(f"处理文件 {jsonl_file} 时出错: {e}")
+                    continue
+    print(f'完成处理文件 {jsonl_file}, 共处理 {count} 条数据')
+    return dict_data
+
+def main():
+    args = parse_args()
+    # tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+    # is_llama = 'llama' in args.tokenizer.lower()
+    input_dir = args.input_dir
+    output_dir = args.output_dir
+    max_len = args.max_len
+    tokenizer_path = args.tokenizer
+    num_processes = args.num_processes  # 新增参数
+    # print(tokenizer)
+
+    jsonl_files = glob.glob(f'{input_dir}/*.jsonl')
+    # 创建进程池
+    pool = mp.Pool(processes=num_processes)
+    
+    # 准备部分函数
+    process_file_partial = partial(process_file, tokenizer_path=tokenizer_path, max_len=max_len)
+    
+    # 使用进程池处理文件
+    results = pool.map(process_file_partial, jsonl_files)
+    
+    # 关闭进程池
+    pool.close()
+    pool.join()
+    dict_data = {
+        'input_ids': [],
+        'labels': []
+    }
+    # results = asyncio.run(process_files_async(jsonl_files, args.tokenizer, max_len))
+    for result in results:
+        dict_data['input_ids'].extend(result['input_ids'])
+        dict_data['labels'].extend(result['labels'])
+    # for jsonl_file in jsonl_files:
+    #     print(jsonl_file)
+    #     with open(jsonl_file, 'r') as f:
+    #         for line in f:
+    #             data = json.loads(line)
+    #             if 'data' in data:
+    #                 try:
+    #                     conversations = data['data']
+    #                     input_ids, labels = create_inputs_labels(conversations, tokenizer, is_llama, max_len)
+    #                     dict_data['input_ids'].append(input_ids)
+    #                     dict_data['labels'].append(labels)
+    #                 except Exception as e:
+    #                     print(e)
+    #                     continue
+    #     print(f'finished one file with {len(dict_data["input_ids"])} samples')
     ds = Dataset.from_dict(dict_data)
     ds.save_to_disk(output_dir)
     print(f'saved to {output_dir} with {len(ds)} samples')
+    
+async def process_file_async(jsonl_file, tokenizer, is_llama, max_len):
+    dict_data = {
+        'input_ids': [],
+        'labels': []
+    }
+    print(f"开始处理文件: {jsonl_file}")
+    count = 0
+    async with aiofiles.open(jsonl_file, 'r') as f:
+        async for line in f:
+            data = json.loads(line)
+            if 'data' in data:
+                try:
+                    conversations = data['data']
+                    input_ids, labels = create_inputs_labels(conversations, tokenizer, is_llama, max_len)
+                    dict_data['input_ids'].append(input_ids)
+                    dict_data['labels'].append(labels)
+                    count += 1
+                    if count % 1000 == 0:
+                        print(f"文件 {jsonl_file} 已处理 {count} 条数据")
+                except Exception as e:
+                    print(f"处理文件 {jsonl_file} 时出错: {e}")
+                    continue
+    print(f'完成处理文件 {jsonl_file}, 共处理 {count} 条数据')
+    return dict_data
+
+async def process_files_async(jsonl_files, tokenizer_path, max_len):
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+    is_llama = 'llama' in tokenizer_path.lower()
+    
+    tasks = [process_file_async(file, tokenizer, is_llama, max_len) for file in jsonl_files]
+    results = await asyncio.gather(*tasks)
+    return results
 if __name__ == '__main__':
     main()
