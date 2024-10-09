@@ -65,7 +65,7 @@ def main(config_file,ckpt_file,input_text,device):
         output = model.model.generate(
             input_ids = input_ids['input_ids'],
             attention_mask = input_ids['attention_mask'],
-            max_length=2048,
+            max_new_tokens=2048,
             num_return_sequences=1,
             past_key_values=cache,
             use_cache=True,

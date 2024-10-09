@@ -1,0 +1,16 @@
+RWKV:
+  layers: [0,2,4,6]
+  grad_cp: 1
+
+Llama:
+  model_id: /home/yueyulin/models/Qwen2.5-7B-Instruct/
+is_llama_ffn: True
+is_all_labels_kl: True
+kl_weight: 0.1
+ce_weight: 1
+model_file: Llama3.18BInstructRWKV8Layers
+teach_mode:
+  is_client: False
+  nccl_file: nccl.txt
+  is_hidden_align: False
+  num_groups: 2
