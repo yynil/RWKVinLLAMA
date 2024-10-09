@@ -3,11 +3,11 @@ import os
 def setup_env():
     parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     sys.path.append(parent_dir)
-    rwkv_path = os.path.join(parent_dir, 'rwkv')
-    sys.path.append(rwkv_path)
+    # rwkv_path = os.path.join(parent_dir, 'rwkv')
+    # sys.path.append(rwkv_path)
     rwkv_llama_path = os.path.join(parent_dir, 'rwkv_llama')
     sys.path.append(rwkv_llama_path)
-    print(f'add path: {rwkv_path} to sys.path')
+    # print(f'add path: {rwkv_path} to sys.path')
     print(f'add path: {rwkv_llama_path} to sys.path')
     os.environ['CUDA_HOME'] = '/usr/local/cuda-12.1'
     os.environ['RWKV_JIT_ON'] = '0'

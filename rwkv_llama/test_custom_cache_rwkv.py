@@ -12,7 +12,7 @@ input_text = "Tell me something about Alexander the Great."
 input_text = "Why is the sky blue?"
 input_text = "Does programming language Rust is faster than Python? Why?"
 input_text = "Which number is greater, 9.11 or 9.8?"
-def main(config_file,ckpt_file,input_text):
+def main(config_file,ckpt_file,input_text,device):
     # 获取要添加的目录路径
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,8 +26,7 @@ def main(config_file,ckpt_file,input_text):
     from transformers import AutoTokenizer, AutoModelForCausalLM
     from rwkv_llama.utilities import HybridCache
 
-    # 检查CUDA是否可用
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+ 
     print(f"使用设备: {device}")
     from transformers import AutoModelForCausalLM, AutoTokenizer
     import yaml
@@ -58,7 +57,7 @@ def main(config_file,ckpt_file,input_text):
     input_ids = tokenizer(input_text, return_tensors="pt").to(device)
     print(input_ids)
         
-    model = model.to(dtype=torch.bfloat16,device='cuda')
+    model = model.to(dtype=torch.bfloat16,device=device)
     model.eval()
     is_llama = 'llama' in model_id.lower()
     # 使用模型生成输出,同时使用HybridCache
@@ -86,6 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--config_file', type=str, default=config_file)
     parser.add_argument('--ckpt_file', type=str, default=ckpt_file)
     parser.add_argument('--input_text', type=str, default=input_text)
+    parser.add_argument('--device', type=str)
     args = parser.parse_args()
-    main(args.config_file,args.ckpt_file,args.input_text)
+    main(args.config_file,args.ckpt_file,args.input_text,args.device)
     
