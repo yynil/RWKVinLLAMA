@@ -91,7 +91,7 @@ def create_inputs_labels(conversations, tokenizer, is_llama, max_len):
     return input_ids, labels
 
 
-def process_file(jsonl_file, tokenizer_path, max_len):
+def process_file(jsonl_file, tokenizer_path, max_len, tmp_output_dir):
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     is_llama = 'llama' in tokenizer_path.lower()
     
@@ -111,14 +111,20 @@ def process_file(jsonl_file, tokenizer_path, max_len):
                     dict_data['input_ids'].append(input_ids)
                     dict_data['labels'].append(labels)
                     count += 1
-                    if count % 1000 == 0:
-                        print(f"文件 {jsonl_file} 已处理 {count} 条数据")
+                    
                 except Exception as e:
                     print(f"处理文件 {jsonl_file} 时出错: {e}")
                     continue
     print(f'完成处理文件 {jsonl_file}, 共处理 {count} 条数据')
-    return dict_data
-
+    import os
+    import random
+    random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=10))
+    output_dir = os.path.join(tmp_output_dir, random_str)
+    #save as a dataset
+    ds = Dataset.from_dict(dict_data)
+    ds.save_to_disk(output_dir)
+    print(f'saved {jsonl_file} to {output_dir} with {len(ds)} samples')
+    return output_dir
 def main():
     args = parse_args()
     # tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
@@ -133,9 +139,11 @@ def main():
     jsonl_files = glob.glob(f'{input_dir}/*.jsonl')
     # 创建进程池
     pool = mp.Pool(processes=num_processes)
-    
+    tmp_output_dir = f'{output_dir}/tmp'
+    import os
+    os.makedirs(tmp_output_dir, exist_ok=True)
     # 准备部分函数
-    process_file_partial = partial(process_file, tokenizer_path=tokenizer_path, max_len=max_len)
+    process_file_partial = partial(process_file, tokenizer_path=tokenizer_path, max_len=max_len, tmp_output_dir=tmp_output_dir)
     
     # 使用进程池处理文件
     results = pool.map(process_file_partial, jsonl_files)
@@ -148,9 +156,17 @@ def main():
         'labels': []
     }
     # results = asyncio.run(process_files_async(jsonl_files, args.tokenizer, max_len))
-    for result in results:
-        dict_data['input_ids'].extend(result['input_ids'])
-        dict_data['labels'].extend(result['labels'])
+    print(f'save all files to {tmp_output_dir}, the datasets directories are {results}')
+    #concatenate all datasets in tmp_output_dir
+    from datasets import load_from_disk,concatenate_datasets
+    tmp_datasets = [load_from_disk(dir) for dir in results]
+    concatenated_dataset = concatenate_datasets(tmp_datasets)
+    print(f'saved to {output_dir} with {len(concatenated_dataset)} samples')
+    concatenated_dataset.save_to_disk(output_dir)
+    #delete the tmp_output_dir
+    import shutil
+    shutil.rmtree(tmp_output_dir)
+    print(f'deleted {tmp_output_dir}')
     # for jsonl_file in jsonl_files:
     #     print(jsonl_file)
     #     with open(jsonl_file, 'r') as f:
@@ -166,9 +182,9 @@ def main():
     #                     print(e)
     #                     continue
     #     print(f'finished one file with {len(dict_data["input_ids"])} samples')
-    ds = Dataset.from_dict(dict_data)
-    ds.save_to_disk(output_dir)
-    print(f'saved to {output_dir} with {len(ds)} samples')
+    # ds = Dataset.from_dict(dict_data)
+    # ds.save_to_disk(output_dir)
+    # print(f'saved to {output_dir} with {len(ds)} samples')
     
 async def process_file_async(jsonl_file, tokenizer, is_llama, max_len):
     dict_data = {
