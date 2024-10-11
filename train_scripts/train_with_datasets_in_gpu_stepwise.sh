@@ -14,7 +14,8 @@ ACCUMULATE_GRAD_BATCHES=4
 MAX_EPOCHS=2
 LOG_EVERY_N_STEPS=500
 MODEL_TYPE="qwen"
-while getopts ":T:l:n:m:M:b:w:v:i:f:d:t:o:c:k:h:A:p:D:" opt; do
+WKV_TYPE="fla"
+while getopts ":T:l:n:m:M:b:w:v:i:f:d:t:o:c:k:h:A:p:D:W:" opt; do
 case $opt in
     T) TRAINING_LAYER="$OPTARG"
     ;;
@@ -48,6 +49,8 @@ case $opt in
     ;;
     D) BASE_DIR_TRAIN="$OPTARG"
     ;;
+    W) WKV_TYPE="$OPTARG"
+    ;;
     \?) echo "无效的选项 -$OPTARG" >&2
     exit 1
     ;;
@@ -71,9 +74,10 @@ echo "OUTPUT_DIR: $OUTPUT_DIR"
 echo "MAX_EPOCHS: $MAX_EPOCHS"
 echo "ACCUMULATE_GRAD_BATCHES: $ACCUMULATE_GRAD_BATCHES"
 echo "CKPT_FILE: $CKPT_FILE"
+echo "WKV_TYPE: $WKV_TYPE"
 
 
-WKV=fla CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.py \
+WKV=$WKV_TYPE CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,0,7 python train_scripts/train_hybrid.py \
     --num_devices $NUM_DEVICES \
     --grad_cp 1 \
     --max_seq_length $MAX_SEQ_LENGTH \
