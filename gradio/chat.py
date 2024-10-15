@@ -121,6 +121,7 @@ def get_cuda_memory_usage():
 
 # 创建 Gradio 界面
 with gr.Blocks() as demo:
+    gr.Markdown(f"当前配置文件: {args.config_file}\n当前检查点文件: {args.ckpt_file}")
     chatbot = gr.Chatbot()
     msg = gr.Textbox()
     clear_chat_btn = gr.Button("清除对话")
