@@ -366,7 +366,9 @@ class HybridModel(nn.Module):
         for layer_idx in range(transformer_model.config.num_hidden_layers):
             if layer_idx in rwkv_args.layers:
                 rwkv_encoder = init_block_params(rwkv_args,layer_idx,transformer_model.model.layers[layer_idx])
+                old_layer = transformer_model.model.layers[layer_idx]
                 transformer_model.model.layers[layer_idx] = rwkv_encoder
+                del old_layer
         self.model = transformer_model
         self.args = rwkv_args
     def forward(
