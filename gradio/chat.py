@@ -68,8 +68,6 @@ def chat(message, history, session):
             num_return_sequences=1,
             past_key_values=session["cache"],
             use_cache=True,
-            do_sample=False,
-            num_beams=1,
             early_stopping=True,
         )
     
