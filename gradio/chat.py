@@ -70,6 +70,7 @@ def chat(message, history, session):
             use_cache=True,
             do_sample=False,
             num_beams=1,
+            early_stopping=True,
         )
     
     generated_text = tokenizer.decode(output[0,input_length:], skip_special_tokens=True)            
