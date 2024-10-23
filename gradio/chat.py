@@ -69,6 +69,7 @@ def chat(message, history, session):
             past_key_values=session["cache"],
             use_cache=True,
             early_stopping=True,
+            do_sample=True,
         )
     
     generated_text = tokenizer.decode(output[0,input_length:], skip_special_tokens=True)            
@@ -83,8 +84,8 @@ def chat(message, history, session):
 
 import gradio as gr
 
-config_file = "/home/yueyulin/github/RWKVinLLAMA/configs/step_wise/test_hybrid_4_layer_qwenmlp_local.yaml"
-ckpt_file = "/home/yueyulin/model/qwen/layer4.pth"
+config_file = "/home/yueyulin/github/RWKVinLLAMA/configs/step_wise/test_hybrid_5_layer_qwenmlp_local.yaml"
+ckpt_file = "/home/yueyulin/model/qwen/layer5.pth"
 import argparse
 parser = argparse.ArgumentParser()  
 parser.add_argument('--config_file', type=str, default=config_file)

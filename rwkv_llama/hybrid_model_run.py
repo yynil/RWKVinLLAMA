@@ -304,11 +304,13 @@ class RWKVDecoderLayer(nn.Module):
         **kwargs):
         # Ensure hidden_states requires gradient
         _,T,_ = hidden_states.shape
+        past_key_length = 0
         if past_key_value is not None:
             if len(past_key_value) <= self.layer_idx:
                 last_state = None
             else:
                 last_state = past_key_value[self.layer_idx][0]
+        
         hidden_states,states= self.block(hidden_states,last_state)
         # hidden_states = self.block(hidden_states)
         # logging.info(f'forward in {self.layer_idx}')

@@ -55,6 +55,23 @@ class HybridCache(DynamicCache):
     def __init__(self) -> None:
         super().__init__()
         self.rwkv_layers = set()
+
+    def __repr__(self) -> str:
+        rwkv_layers =  f"HybridCache(rwkv_layers={self.rwkv_layers})"
+        #count the number of key_cache and value_cache
+        key_cache_count = sum(len(cache) for cache in self.key_cache)
+        value_cache_count = sum(len(cache) for cache in self.value_cache)
+        count_info = rwkv_layers + f", key_cache_count={key_cache_count}, value_cache_count={value_cache_count}"
+        memories = 0
+        seq_length = self.get_seq_length()
+        for cache in self.value_cache:
+            for data in cache:
+                if not isinstance(data,torch.Tensor):
+                    memories += data.time_mix_state.wkv_state.numel()
+                else:
+                    memories += data.numel()
+        count_info += f", memories={memories/1024/1024}MB, seq_length={seq_length}"
+        return count_info
     def update(self, 
                key_states: Union[int,torch.Tensor], 
                value_states: Union[torch.Tensor,BlockState], 
@@ -100,3 +117,20 @@ class HybridCache(DynamicCache):
         if item in self.rwkv_layers:
             return self.value_cache[item]
         return super().__getitem__(item)
+    def offload_to_cpu(self):
+        for cache in self.value_cache:
+            for data in cache:
+                if isinstance(data,torch.Tensor):
+                    data.cpu()
+                else:
+                    data.time_mix_state.wkv_state.cpu()
+                    data.time_mix_state.shift_state.cpu()
+                    
+    def offload_to_cuda(self,device: str):
+        for cache in self.value_cache:
+            for data in cache:
+                if isinstance(data,torch.Tensor):
+                    data.cuda(device)
+                else:
+                    data.time_mix_state.wkv_state.cuda(device)
+                    data.time_mix_state.shift_state.cuda(device)
