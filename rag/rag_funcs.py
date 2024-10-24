@@ -14,8 +14,13 @@ from rwkv_llama.hybrid_model_run import create_rwkv_args, HybridModel
 from prompt_chinese import PROMPTS
 from cachetools import cached, TTLCache, LRUCache
 from typing import List
+from transformers import StoppingCriteria, StoppingCriteriaList,StopStringCriteria
 model = None
 tokenizer = None
+#################PRORFILING#################
+from torch.profiler import profile,record_function,ProfilerActivity
+############################################
+
 
 def load_model(config_file, ckpt_file,device):
     global model, tokenizer
@@ -32,7 +37,8 @@ def load_model(config_file, ckpt_file,device):
     model.load_ckpt(ckpt_file)
     model = model.to(dtype=torch.bfloat16, device=device)
     model.eval()
-    
+    # 使用 torch.compile() 编译模型
+    model = torch.compile(model)
     print(model)    
     return "模型加载成功!"
 def get_cache_key(prompt: str,model : HybridModel,tokenizer: AutoTokenizer,device: str): 
@@ -68,7 +74,7 @@ def get_hybrid_cache(prompt: str,model : HybridModel,tokenizer: AutoTokenizer,de
     #     )
     return cache
 
-def generate_text(prompt: str,history: List[str], model : HybridModel,tokenizer: AutoTokenizer,cache: HybridCache, device: str):
+def generate_text(prompt: str,history: List[str], model : HybridModel,tokenizer: AutoTokenizer,cache: HybridCache, device: str,stop_text: str,profile_enabled: bool=False):
     history.append({"role": "user", "content": prompt})
     
     prompt = tokenizer.apply_chat_template(history,tokenize=False,add_generation_prompt=True)
@@ -79,17 +85,33 @@ def generate_text(prompt: str,history: List[str], model : HybridModel,tokenizer:
     input_ids = input_ids.to(device)
     attention_mask = attention_mask.to(device)
     input_length = input_ids.shape[1]
+    stopping_criteria = StoppingCriteriaList([StopStringCriteria(tokenizer,[stop_text])]) if stop_text else None
     with torch.no_grad():
-        output = model.model.generate(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            max_new_tokens=2048,
-            num_return_sequences=1,
-            past_key_values=cache,
-            use_cache=True,
-            do_sample=False,
-            early_stopping=True,
-        )
+        if profile_enabled:
+            with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
+                output = model.model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=2048,
+                num_return_sequences=1,
+                past_key_values=cache,
+                use_cache=True,
+                do_sample=False,
+                early_stopping=True,
+                stopping_criteria=stopping_criteria
+            )
+            print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+        else:
+            output = model.model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=2048,
+                num_return_sequences=1,
+                past_key_values=cache,
+                use_cache=True,
+                early_stopping=True,
+                stopping_criteria=stopping_criteria
+            )
     generated_text = tokenizer.decode(output[0,input_length:], skip_special_tokens=True)
     return generated_text
 
@@ -124,41 +146,20 @@ if __name__ == "__main__":
     print(real_data)
     load_model(config_file,ckpt_file,device)
     history = []
-    import time
-    start_time = time.time()
+    stop_text = PROMPTS["DEFAULT_COMPLETION_DELIMITER"]
     cache = get_hybrid_cache(prefix,model,tokenizer,device)
-    end_time = time.time()
-    print(f'get_hybrid_cache time: {end_time - start_time}')
     print(cache)
-    start_time = time.time()
-    cache.offload_to_cpu()
-    end_time = time.time()
-    print(f'offload_to_cpu time: {end_time - start_time}')
     all_data = prefix + real_data
-    # print(all_data)
-    start_time = time.time()
-    cache.offload_to_cuda(device)
-    end_time = time.time()
-    print(f'offload_to_cuda time: {end_time - start_time}')
-    start_time = time.time()
-    generated_text = generate_text(all_data,history,model,tokenizer,cache,device)
-    end_time = time.time()
-    print(f'generate_text time: {end_time - start_time}')
+    generated_text = generate_text(all_data,history,model,tokenizer,cache,device,stop_text)
     print(generated_text)
     print(cache)
     history.append({"role": "assistant", "content": generated_text})
     continue_prompt = PROMPTS["entiti_continue_extraction"]
-    start_time = time.time()
-    generated_text = generate_text(continue_prompt,history,model,tokenizer,cache,device)
-    end_time = time.time()
-    print(f'generate_text time: {end_time - start_time}')
+    generated_text = generate_text(continue_prompt,history,model,tokenizer,cache,device,stop_text)
     print(generated_text)
     print(cache)
     history.append({"role": "assistant", "content": generated_text})    
     confirm_prompt = PROMPTS["entiti_if_loop_extraction"]
-    start_time = time.time()
-    generated_text = generate_text(confirm_prompt,history,model,tokenizer,cache,device)
-    end_time = time.time()
-    print(f'generate_text time: {end_time - start_time}')
+    generated_text = generate_text(confirm_prompt,history,model,tokenizer,cache,device,None)
     print(generated_text)
     print(cache)
