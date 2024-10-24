@@ -245,12 +245,12 @@ Output:
 
 PROMPTS[
     "entiti_continue_extraction"
-] = """很多实体在最后一次提取中被遗漏了。请使用相同的规则和格式添加遗漏的实体：
+] = """很多实体和关系在最后一次提取中被遗漏了。请使用相同的规则和格式添加遗漏的实体和关系，不要重复输出已经提取的实体和关系：
 """
 
 PROMPTS[
     "entiti_if_loop_extraction"
-] = """是否还有实体被遗漏，如果还有遗漏的实体，回答“是”，否则回答“否”：
+] = """是否还有实体或者关系被遗漏，如果还有遗漏的实体或者关系，回答“是”，否则回答“否”：
 """
 
 PROMPTS["fail_response"] = "Sorry, I'm not able to provide an answer to that question."

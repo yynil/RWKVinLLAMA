@@ -30,7 +30,7 @@ def load_model(config_file, ckpt_file,device):
     
     model_id = config['Llama']['model_id']
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    transformer_model = AutoModelForCausalLM.from_pretrained(model_id)
+    transformer_model = AutoModelForCausalLM.from_pretrained(model_id,attn_implementation="flash_attention_2")
     
     args = create_rwkv_args(transformer_model.config, config)
     model = HybridModel(transformer_model, args)
@@ -110,7 +110,8 @@ def generate_text(prompt: str,history: List[str], model : HybridModel,tokenizer:
                 past_key_values=cache,
                 use_cache=True,
                 early_stopping=True,
-                stopping_criteria=stopping_criteria
+                stopping_criteria=stopping_criteria,
+                do_sample=False
             )
     generated_text = tokenizer.decode(output[0,input_length:], skip_special_tokens=True)
     return generated_text
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     print(cache)
     history.append({"role": "assistant", "content": generated_text})
     continue_prompt = PROMPTS["entiti_continue_extraction"]
-    generated_text = generate_text(continue_prompt,history,model,tokenizer,cache,device,stop_text)
+    generated_text = generate_text(continue_prompt,history,model,tokenizer,cache,device,None)
     print(generated_text)
     print(cache)
     history.append({"role": "assistant", "content": generated_text})    
