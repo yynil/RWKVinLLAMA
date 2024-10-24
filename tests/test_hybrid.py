@@ -2,7 +2,7 @@ import sys
 import os
 def setup_env():
     parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    rwkv_path = os.path.join(parent_dir, 'rwkv')
+    rwkv_path = os.path.join(parent_dir, 'rwkv7')
     sys.path.append(rwkv_path)
     rwkv_llama_path = os.path.join(parent_dir, 'rwkv_llama')
     sys.path.append(rwkv_llama_path)
@@ -69,7 +69,7 @@ if rwkv_args.is_rwkv_att_only:
         print(name, param.shape, param.requires_grad)
 else:
     for name, param in model.named_parameters():
-        if not 'block.' in name or 'ffn' in name:
+        if not 'block.' in name or 'mlp' in name:
             param.requires_grad = False
         print(name, param.shape, param.requires_grad)
 model = model.to(device=device, dtype=dtype)

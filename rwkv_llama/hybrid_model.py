@@ -1,5 +1,5 @@
 from functools import partial
-from src.model import RWKV_Tmix_x060, RWKV_CMix_x060,Block
+from src.model import Block
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
@@ -104,15 +104,15 @@ class HybridModel(pl.LightningModule):
                 return decoder
             else:
                 decoder = RWKVDecoderLayer(rwkv_args,layer_idx)
-                decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
-                decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
-                decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
-                decoder.block.att.output.weight.data = llama_layer.self_attn.o_proj.weight.data
+                decoder.block.attn.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
+                decoder.block.attn.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
+                decoder.block.attn.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
+                decoder.block.attn.output.weight.data = llama_layer.self_attn.o_proj.weight.data
                 if rwkv_args.is_llama_ffn:
-                    decoder.block.ffn = llama_layer.mlp
+                    decoder.block.mlp = llama_layer.mlp
                 else:
-                    decoder.block.ffn.key.weight.data = llama_layer.mlp.up_proj.weight.data
-                    decoder.block.ffn.value.weight.data = llama_layer.mlp.down_proj.weight.data
+                    decoder.block.mlp.c_fc.weight.data = llama_layer.mlp.up_proj.weight.data
+                    decoder.block.mlp.c_proj.weight.data = llama_layer.mlp.down_proj.weight.data
                 return decoder
         for layer_idx in range(transformer_model.config.num_hidden_layers):
             if layer_idx in rwkv_args.layers:
