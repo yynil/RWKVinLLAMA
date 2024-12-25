@@ -41,7 +41,11 @@ def load_model(config_file, ckpt_file, num_gpus, off_load_emb_head):
         print(f"args is {args}")
         with no_init_weights():
             model = HybridModel(args, transformer_config)
-        model.load_checkpoint(ckpt_file)
+        if ckpt_file is None:
+            #try to load from model_id
+            model.load_checkpoint(model_id)
+        else:
+            model.load_checkpoint(ckpt_file)
         from accelerate import dispatch_model, infer_auto_device_map
 
         model = model.to(dtype=dtype)
@@ -110,6 +114,7 @@ def chat(message, history, session):
         repetition_penalty=1.1,
         no_repeat_ngram_size=4,
     )
+    print(f'cache is {session["cache"]}')
     with torch.no_grad():
         if is_hybrid:
             print("use hybrid model to generate")
@@ -126,6 +131,10 @@ def chat(message, history, session):
             output_attentions=False,
             use_cache=True,
         )
+        
+    generated_tokens_length = output.shape[1] - input_length
+    print(f'generated {generated_tokens_length}')
+    print(f'generated ids {output[0, input_length:]}')
 
     generated_text = tokenizer.decode(
         output[0, input_length:], skip_special_tokens=True
@@ -145,9 +154,9 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config_file", type=str, default=config_file)
-parser.add_argument("--ckpt_file", type=str, default=ckpt_file)
+parser.add_argument("--ckpt_file", type=str, default=None)
 parser.add_argument("--is_hybrid", action="store_true", default=False)
-parser.add_argument("--num_gpus", type=int, default=4)
+parser.add_argument("--num_gpus", type=int, default=1)
 parser.add_argument("--off_load_emb_head", action="store_true", default=False)
 args = parser.parse_args()
 print(args)
