@@ -101,7 +101,7 @@ class HybridCache(DynamicCache):
     def get_seq_length(self, layer_idx: Optional[int] = 0):
         # print("来自 HybridCache: get_seq_length 方法被调用")
         if layer_idx in self.rwkv_layers:
-            return self.key_cache[layer_idx][0]+1#####TRANSFORMERS' GENERATE LOGIC WILL MISS LAST KVCACHE, THIS IS FATAL FOR STATE MODEL SINCE STATE MODEL ACCUMULATE STATE ALL STATE TO THE LAST TOKEN GENERATED!!!
+            return self.key_cache[layer_idx][0]
         return super().get_seq_length(layer_idx)
     
     def get_max_length(self):

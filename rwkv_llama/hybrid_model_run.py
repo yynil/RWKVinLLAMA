@@ -26,20 +26,14 @@ if os.environ.get('WKV') == 'fla':
     from rwkvfla.ops.rwkv6 import chunk_rwkv6,fused_recurrent_rwkv6
 
     def RUN_CUDA_RWKV6_STATE(B, T, C, H, r, k, v, w, u, s):
-        device = r.device
-        dtype = r.dtype
+        getattr(torch, r.device.type).set_device(r.device.index)
         r = rearrange(r, 'b l (h d) -> b h l d', h = H)
         k = rearrange(k, 'b l (h d) -> b h l d', h = H)
         v = rearrange(v, 'b l (h d) -> b h l d', h = H)
         w = rearrange(-torch.exp(w), 'b l (h d) -> b h l d', h = H)
-        if device != 'cuda:0':
-            o, state = chunk_rwkv6(r.to('cuda:0'), k.to('cuda:0'), v.to('cuda:0'), w.to('cuda:0'), u=u.to('cuda:0'), scale=1., initial_state=s.to('cuda:0'), output_final_state=True,training=False)
-            o = o.to(device)
-            state = state.to(device)
-        else:
-            o, state = chunk_rwkv6(r, k, v, w, u=u, scale=1., initial_state=s, output_final_state=True,training=False)
+        o, state = chunk_rwkv6(r, k, v, w, u=u, scale=1., initial_state=s, output_final_state=True,training=False)
         x = rearrange(o, 'b h l d -> b l (h d)')
-        return x.to(dtype), state.to(dtype)
+        return x, state
 else:
     from torch.utils.cpp_extension import load
     HEAD_SIZE = int(os.environ["RWKV_HEAD_SIZE_A"])
