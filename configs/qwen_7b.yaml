@@ -3,7 +3,7 @@ RWKV:
   grad_cp: 1
 
 Llama:
-  model_id: /home/yueyulin/models/Qwen2.5-7B-Instruct/
+  model_id: /home/yueyulin/model/qwen_7b_distill_stage2_splits
 is_llama_ffn: True
 kl_weight: 1
 ce_weight: 0

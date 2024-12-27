@@ -10,7 +10,7 @@ print(f"add {project_root} to sys.path")
 import gradio as gr
 import torch
 import yaml
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig,GenerationConfig
 from rwkv_llama.utilities import HybridCache
 from rwkv_llama.hybrid_model_run_rwkv7 import create_rwkv_args, HybridModel
 from transformers.modeling_utils import no_init_weights
@@ -80,7 +80,18 @@ def load_model(config_file, ckpt_file, num_gpus, off_load_emb_head):
     return "模型加载成功!"
 
 
-def chat(message, history, session):
+def chat(
+    message, 
+    history, 
+    session,
+    max_new_tokens,
+    temperature,
+    top_k,
+    top_p,
+    min_p,
+    repetition_penalty,
+    no_repeat_ngram_size
+):
     global model, tokenizer, is_hybrid
     print(message)
 
@@ -93,27 +104,28 @@ def chat(message, history, session):
     current_input_text = tokenizer.apply_chat_template(
         session["conversation"], tokenize=False, add_generation_prompt=True
     )
-    # print(current_input_text)
+    
     index_of_im_start = current_input_text.find("<|im_start|>user")
     if index_of_im_start != -1:
         current_input_text = current_input_text[index_of_im_start:]
     print(current_input_text)
+    
     input_ids = tokenizer(current_input_text, return_tensors="pt").to("cuda:0")
     input_length = input_ids.input_ids.shape[1]
-    from transformers import GenerationConfig
 
     gen_config = GenerationConfig(
-        max_new_tokens=1024,
+        max_new_tokens=max_new_tokens,
         stop_strings=["<|im_end|>"],
         do_sample=True,
         use_cache=True,
-        temperature=0.7,
-        top_k=40,
-        top_p=0.9,
-        min_p=0.05,
-        repetition_penalty=1.1,
-        no_repeat_ngram_size=4,
+        temperature=temperature,
+        top_k=top_k,
+        top_p=top_p,
+        min_p=min_p,
+        repetition_penalty=repetition_penalty,
+        no_repeat_ngram_size=no_repeat_ngram_size
     )
+
     print(f'cache is {session["cache"]}')
     with torch.no_grad():
         if is_hybrid:
@@ -121,7 +133,7 @@ def chat(message, history, session):
             model_to_use = model.model
         else:
             model_to_use = model
-        print(f'{input_ids['input_ids'].shape}')
+        print(f'{input_ids["input_ids"].shape}')
         output = model_to_use.generate(
             input_ids=input_ids["input_ids"],
             attention_mask=input_ids["attention_mask"],
@@ -141,7 +153,6 @@ def chat(message, history, session):
     )
 
     session["conversation"].append({"role": "assistant", "content": generated_text})
-
     print(generated_text)
     return history + [[message, generated_text]], session
 
@@ -204,21 +215,64 @@ def get_cuda_memory_usage():
 # 创建 Gradio 界面
 with gr.Blocks() as demo:
     gr.Markdown(f"当前配置文件: {args.config_file}\n当前检查点文件: {args.ckpt_file}")
-    chatbot = gr.Chatbot()
-    msg = gr.Textbox()
-    clear_chat_btn = gr.Button("清除对话")
-    clear_cache_btn = gr.Button("清除缓存")
+    
+    with gr.Row():
+        with gr.Column(scale=4):
+            chatbot = gr.Chatbot()
+            msg = gr.Textbox(label="输入消息")
+            with gr.Row():
+                clear_chat_btn = gr.Button("清除对话")
+                clear_cache_btn = gr.Button("清除缓存")
+        
+        with gr.Column(scale=1):
+            gr.Markdown("### 生成参数设置")
+            max_new_tokens = gr.Slider(
+                minimum=1, maximum=2048, value=1024, step=1,
+                label="最大生成长度", info="生成的最大token数量"
+            )
+            temperature = gr.Slider(
+                minimum=0.1, maximum=2.0, value=0.7, step=0.1,
+                label="温度", info="值越高，生成的文本越随机"
+            )
+            top_k = gr.Slider(
+                minimum=1, maximum=100, value=40, step=1,
+                label="Top-K", info="从概率最高的K个token中采样"
+            )
+            top_p = gr.Slider(
+                minimum=0.1, maximum=1.0, value=0.9, step=0.1,
+                label="Top-P", info="累积概率阈值采样"
+            )
+            min_p = gr.Slider(
+                minimum=0.01, maximum=0.5, value=0.05, step=0.01,
+                label="Min-P", info="最小概率阈值"
+            )
+            repetition_penalty = gr.Slider(
+                minimum=1.0, maximum=2.0, value=1.1, step=0.1,
+                label="重复惩罚", info="防止文本重复的惩罚系数"
+            )
+            no_repeat_ngram_size = gr.Slider(
+                minimum=1, maximum=10, value=4, step=1,
+                label="禁止重复N元组大小", info="禁止重复的N元组长度"
+            )
+            
     session = gr.State()
-
+    
     memory_info = gr.Textbox(label="系统内存和CUDA显存使用情况")
     update_memory_btn = gr.Button("更新内存信息")
 
-    msg.submit(chat, inputs=[msg, chatbot, session], outputs=[chatbot, session])
-    clear_chat_btn.click(
-        clear_conversation, inputs=[session], outputs=[chatbot, session]
+    msg.submit(
+        chat,
+        inputs=[
+            msg, chatbot, session,
+            max_new_tokens, temperature, top_k, top_p,
+            min_p, repetition_penalty, no_repeat_ngram_size
+        ],
+        outputs=[chatbot, session]
     )
+    clear_chat_btn.click(clear_conversation, inputs=[session], outputs=[chatbot, session])
     clear_cache_btn.click(clear_cache, inputs=[session], outputs=[session])
-
     update_memory_btn.click(get_memory_usage, outputs=memory_info)
+
+
 
 demo.launch(server_name="0.0.0.0", server_port=7860)

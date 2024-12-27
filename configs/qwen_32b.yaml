@@ -3,7 +3,7 @@ RWKV:
   grad_cp: 1
 
 Llama:
-  model_id: /home/yueyulin/models/Qwen/Qwen2.5-32B-Instruct/
+  model_id: /home/yueyulin/model/qwen_32b_stage2
 is_llama_ffn: True
 kl_weight: 1
 ce_weight: 0
