@@ -113,6 +113,7 @@ def chat(
     input_ids = tokenizer(current_input_text, return_tensors="pt").to("cuda:0")
     input_length = input_ids.input_ids.shape[1]
 
+    print(f'input_ids is :{input_ids['input_ids']}')
     gen_config = GenerationConfig(
         max_new_tokens=max_new_tokens,
         stop_strings=["<|im_end|>"],
