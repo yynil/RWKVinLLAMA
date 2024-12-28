@@ -79,6 +79,13 @@ def load_model(config_file, ckpt_file, num_gpus, off_load_emb_head):
     print(model)
     return "模型加载成功!"
 
+def creat_chatml(conversations):
+    chatml = ""
+    for conversation in conversations:
+        chatml += f"<|im_start|>{conversation['role']}\n{conversation['content']}<|im_end|>\n"
+    chatml += "<|im_start|>assistant\n"
+    return chatml
+
 
 def chat(
     message, 
@@ -98,17 +105,11 @@ def chat(
     if session is None:
         print("create new session")
         session = create_new_session()
-
+    #strip the spaces in the message
+    message=message.replace(" ","")
     session["conversation"].append({"role": "user", "content": message})
     print(session["conversation"])
-    current_input_text = tokenizer.apply_chat_template(
-        session["conversation"], tokenize=False, add_generation_prompt=True
-    )
-    
-    index_of_im_start = current_input_text.find("<|im_start|>user")
-    if index_of_im_start != -1:
-        current_input_text = current_input_text[index_of_im_start:]
-    print(current_input_text)
+    current_input_text = creat_chatml(session["conversation"])
     
     input_ids = tokenizer(current_input_text, return_tensors="pt").to("cuda:0")
     input_length = input_ids.input_ids.shape[1]
@@ -138,11 +139,11 @@ def chat(
         output = model_to_use.generate(
             input_ids=input_ids["input_ids"],
             attention_mask=input_ids["attention_mask"],
-            past_key_values=session["cache"],
+            # past_key_values=session["cache"],
             generation_config=gen_config,
             tokenizer=tokenizer,
             output_attentions=False,
-            use_cache=True,
+            # use_cache=True,
         )
         
     generated_tokens_length = output.shape[1] - input_length
