@@ -54,6 +54,22 @@ load_functions = {
     'huggingface': load_huggingface_dataset
 }
 
+def load_datasets_from_directories(directories):
+    """
+    Load datasets from directories.
+    Args:
+    directories: A list of directories containing the dataset files.
+    Returns:
+    A list of datasets.
+    """
+    datasets = []
+    for directory in directories:
+        dataset_type = detect_format(directory)
+        print(f"Detected dataset type: {dataset_type}")
+        dataset = load_functions[dataset_type](directory)
+        datasets.append(dataset)
+    return datasets
+
 if __name__ == '__main__':
     directory = '/home/yueyulin/data/finemath/finemath-4plus/'
     dataset_type = detect_format(directory)

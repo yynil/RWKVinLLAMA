@@ -113,12 +113,13 @@ if __name__ == '__main__':
             'role': 'assistant',
             'content': generated_text
         })
+        message = input('enter message:')
         if message == 'exit':
             break
         if message == 'clear':
             conversation = []
             cache = HybridCache()
-        message = input('enter message:')
+            message = input('enter message:')
         conversation.append({
             'role': 'user',
             'content': message
