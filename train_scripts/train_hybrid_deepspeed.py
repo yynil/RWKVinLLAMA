@@ -435,35 +435,20 @@ if __name__ == '__main__':
     elif args.raw_data is not None:
         print(f'load raw data from {args.raw_data}')
         from transformers import DataCollatorForLanguageModeling
-        from data.raw_dataset import load_datasets_from_directories
+        from data.raw_dataset import load_datasets_from_directories,StreamingCLMDataCollator
         all_ds = load_datasets_from_directories(args.raw_data)
         print(all_ds)
         con_ds = datasets.concatenate_datasets(all_ds)
-        def tokenize_function(examples):
-            return tokenizer(
-                examples['text'],
-                truncation=True,
-                max_length=args.max_seq_length,
-                return_special_tokens_mask=True,
-                padding='max_length'
-            )
-        tokenized_dataset = con_ds.map(
-            tokenize_function,
-            batched=True,
-            num_proc=16,
-            remove_columns=con_ds.column_names,
-            desc="Running tokenization"
-        )
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False,
-                                                    pad_to_multiple_of=args.max_seq_length)
+        data_collator = StreamingCLMDataCollator(tokenizer=tokenizer, max_length=args.max_seq_length)
+        from torch.utils.data.distributed import DistributedSampler
         train_sampler = DistributedSampler(
-            tokenized_dataset,
+            con_ds,
             num_replicas=args.world_size,
             rank=args.local_rank,
             shuffle=True
         )
         train_dataloader = torch.utils.data.DataLoader(
-            tokenized_dataset, 
+            con_ds, 
             batch_size=args.micro_bsz, 
             sampler=train_sampler,  # 使用分布式 sampler
             num_workers=4, 

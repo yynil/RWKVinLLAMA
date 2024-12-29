@@ -72,7 +72,7 @@ deepspeed \
     --num_nodes $NNODES \
     --micro_bsz $MICRO_BSZ \
     --accumulate_grad_batches $ACCUMULATE_GRAD_BATCHES \
-    --max_epochs 2 \
+    --max_epochs 1 \
     --wandb $WANDB \
     --run_name $WANDB_PROJECT \
     --grad_cp $GRAD_CP \

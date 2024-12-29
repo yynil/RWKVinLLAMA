@@ -1,4 +1,7 @@
-from typing import Dict
+from dataclasses import dataclass
+from typing import Dict, List, Union, Optional
+import torch
+from transformers import PreTrainedTokenizer
 import datasets
 import glob
 import os
@@ -118,6 +121,74 @@ def load_datasets_from_directories(directories):
         all_ds.append(ds)
     return all_ds
 
+@dataclass
+class StreamingCLMDataCollator:
+    """
+    Data collator that handles streaming tokenization for causal language modeling
+    with next token prediction.
+    
+    Args:
+        tokenizer: The tokenizer to use for tokenization
+        max_length: Maximum sequence length
+        pad_to_multiple_of: Optional length to pad sequences to a multiple of
+    """
+    tokenizer: PreTrainedTokenizer
+    max_length: int
+    pad_to_multiple_of: Optional[int] = None
+    
+    def __call__(self, examples: List[Dict[str, Union[str, List[str]]]]) -> Dict[str, torch.Tensor]:
+        """
+        Tokenize and collate examples into a batch, shifting labels for next token prediction.
+        
+        Args:
+            examples: List of examples with 'text' field
+            
+        Returns:
+            Batch dictionary with input_ids, attention_mask, and labels
+        """
+        # Extract texts from examples, handling both string and list inputs
+        texts = [
+            ex['text'] if isinstance(ex['text'], str) else ex['text'][0]
+            for ex in examples
+        ]
+        
+        # Tokenize all texts in the batch
+        tokenized = self.tokenizer(
+            texts,
+            truncation=True,
+            max_length=self.max_length,
+            padding="max_length",
+            return_tensors="pt",
+        )
+        
+        # Get the input IDs and attention mask
+        input_ids = tokenized["input_ids"]
+        attention_mask = tokenized["attention_mask"]
+        
+        # Create labels for next token prediction
+        # Labels at position i should be the token at position i+1
+        labels = input_ids.clone()
+        # Move tokens one position left: [t1, t2, t3, t4, pad] -> [t2, t3, t4, pad, pad]
+        labels[:, :-1] = input_ids[:, 1:]
+        # Set the last position to padding token or -100
+        last_token = self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else -100
+        labels[:, -1] = last_token
+        
+        # Set labels to -100 where we have padding in inputs
+        labels[attention_mask == 0] = -100
+        
+        # Also set label to -100 for the position before padding starts
+        # This ensures we don't predict padding tokens
+        padding_start = attention_mask.sum(dim=1) - 1  # Get the last non-padding position
+        for i in range(len(padding_start)):
+            if padding_start[i] > 0:  # Only if there is padding
+                labels[i, padding_start[i]] = -100
+            
+        return {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "labels": labels,
+        }       
 if __name__ == '__main__':
     directory = '/home/yueyulin/data/finemath/finemath-4plus/'
     dataset_type = detect_format(directory)
@@ -152,25 +223,13 @@ if __name__ == '__main__':
     model_path = '/home/yueyulin/model/qwen_7b_stage3_4k_splits/'
     from transformers import DataCollatorForLanguageModeling,AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    def tokenize_function(examples):
-        return tokenizer(
-            examples['text'],
-            truncation=True,
-            max_length=4096,
-            return_special_tokens_mask=True
-        )
-    tokenized_dataset = con_ds.map(
-        tokenize_function,
-        batched=True,
-        num_proc=16,
-        remove_columns=con_ds.column_names,
-        desc="Running tokenization"
-    )
-    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False,
-                                                    pad_to_multiple_of=4096)
+    data_collator = StreamingCLMDataCollator(tokenizer=tokenizer, max_length=4096)
     import torch
     from torch.utils.data import DataLoader
-    data_loader = DataLoader(tokenized_dataset, batch_size=1, collate_fn=data_collator)
+    data_loader = DataLoader(con_ds, batch_size=1, collate_fn=data_collator)
     for batch in data_loader:
         print(batch)
+        print(batch['input_ids'].shape)
+        print(batch['attention_mask'].shape)
+        print(batch['labels'].shape)
         break

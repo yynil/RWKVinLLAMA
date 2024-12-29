@@ -317,6 +317,25 @@ def dpo_train_step(model, ref_model, batch, args):
 def train_step(model, batch, args, teacher_engine=None, tokenizer=None):
     input_ids = batch['input_ids']
     labels = batch['labels']
+    # 处理 labels 不存在的情况
+    if 'labels' not in batch:
+        # 创建左移的 labels: 把 input_ids 往右补充一个 pad token,然后去掉最后一个 token
+        labels = torch.cat([input_ids[:, 1:], 
+                          torch.full((input_ids.shape[0], 1), 
+                                   tokenizer.pad_token_id, 
+                                   device=input_ids.device)], dim=1)
+    else:
+        labels = batch['labels']
+        
+    # 检查 labels 是否已经左移
+    # 通过比较第一个非pad位置的 token 是否相同来判断
+    first_nonpad_pos = (input_ids != tokenizer.pad_token_id).nonzero()[:, 1][0]
+    if input_ids[0, first_nonpad_pos] == labels[0, first_nonpad_pos]:
+        # labels 没有左移,需要左移 1 位
+        labels = torch.cat([labels[:, 1:], 
+                          torch.full((labels.shape[0], 1), 
+                                   tokenizer.pad_token_id, 
+                                   device=labels.device)], dim=1)
     attention_mask = torch.ne(input_ids, tokenizer.pad_token_id).to(input_ids.device)
 
     if not args.is_sft:
