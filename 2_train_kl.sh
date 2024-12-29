@@ -7,7 +7,8 @@ export RWKV_VERSION=v6
 MAX_LENGTH=512
 CONFIG_FILE=toys_playground/configs/qwen7B_KL_Local.yaml
 OUTPUT_DIR=toys_playground/output
-PREPROCESSED_DATA=toys_playground/dataset
+PREPROCESSED_DATA=""
+RAW_DATA_DIR=""
 LR_INIT=6e-4
 LR_FINAL=1e-5
 WARMUP_STEPS=50
@@ -22,11 +23,12 @@ MAX_TRAINED_TOKENS=100_000_000
 TERMINATE_LOSS=0.01
 WANDB=hybrid_trainer_toys
 WANDB_PROJECT=hybrid_trainer_toys
-while getopts "c:o:p:n:m:b:a:l:f:w:k:g:d:F:s:R:W:S:t:T:W:P:" opt; do
+while getopts "c:o:p:n:m:b:a:l:f:w:k:g:d:F:s:R:W:S:t:T:W:P:r:" opt; do
     case $opt in
         c) CONFIG_FILE="$OPTARG";;
         o) OUTPUT_DIR="$OPTARG";;
-        p) PREPROCESSED_DATA="$OPTARG";;
+        p) PREPROCESSED_DATA="--preprocessed_data $OPTARG";;
+        r) RAW_DATA_DIR="--raw_data $OPTARG";;
         n) NNODES="$OPTARG";;
         m) MAX_LENGTH="$OPTARG";;
         b) MICRO_BSZ="$OPTARG";;
@@ -64,7 +66,8 @@ deepspeed \
     --deepspeed_stage $DEEPSTATE_STAGE \
     --config_file $CONFIG_FILE \
     --output_dir $OUTPUT_DIR \
-    --preprocessed_data $PREPROCESSED_DATA \
+    $PREPROCESSED_DATA \
+    $RAW_DATA_DIR \
     --num_devices $GPUS_PER_NODE \
     --num_nodes $NNODES \
     --micro_bsz $MICRO_BSZ \

@@ -59,6 +59,7 @@ def create_arg_parser():
     parser = argparse.ArgumentParser(description='MLM trainer')
     parser.add_argument('--config_file', type=str,default='configs/test_hybrid.yaml', help='training config file')
     parser.add_argument('--preprocessed_data',type=str,nargs='+',help='preprocessed data directory')
+    parser.add_argument('--raw_data',type=str,nargs='+',help='raw data directory')
     parser.add_argument('--output_dir', type=str, default='/data/rwkv/tmp',help='directory to save the trained model')
     parser.add_argument('--num_epochs', type=int, default=1, help='number of epochs to train the model')
     parser.add_argument('--max_seq_length', type=int, default=512, help='maximum sequence length to train the model')
@@ -394,27 +395,6 @@ if __name__ == '__main__':
                 param.requires_grad = True
             else:
                 param.requires_grad = False
-    # else:
-    #     print('Only some params(RWKV related) are trainable')
-    #     if args.is_rwkv_att_only:
-    #         print('only rwkv att is trained')
-    #         for name, param in model.named_parameters():
-    #             if not 'self_attn.' in name:
-    #                 param.requires_grad = False
-    #             # print(name, param.shape, param.requires_grad)
-    #     else:
-    #         if args.is_llama_ffn:
-    #             print('keep llama ffn frozen')
-    #             for name, param in model.named_parameters():
-    #                 if not 'block.' in name or 'ffn' in name:
-    #                     param.requires_grad = False
-    #                 # print(name, param.shape, param.requires_grad)
-    #         else:
-    #             print('keep other modules frozen except rwkv block')
-    #             for name, param in model.named_parameters():
-    #                 if not 'block.' in name:
-    #                     param.requires_grad = False
-    #                 # print(name, param.shape, param.requires_grad)
 
     # 准备数据加载器
     if args.preprocessed_data is not None:
@@ -452,9 +432,48 @@ if __name__ == '__main__':
         val_dataloader = None
         if args.local_rank == 0:
             print(f'load preprocessed data from {args.preprocessed_data} done')
-    else:
-        # 处理其他数据加载情况
-        pass
+    elif args.raw_data is not None:
+        print(f'load raw data from {args.raw_data}')
+        from transformers import DataCollatorForLanguageModeling
+        from data.raw_dataset import load_datasets_from_directories
+        all_ds = load_datasets_from_directories(args.raw_data)
+        print(all_ds)
+        con_ds = datasets.concatenate_datasets(all_ds)
+        def tokenize_function(examples):
+            return tokenizer(
+                examples['text'],
+                truncation=True,
+                max_length=args.max_seq_length,
+                return_special_tokens_mask=True,
+                padding='max_length'
+            )
+        tokenized_dataset = con_ds.map(
+            tokenize_function,
+            batched=True,
+            num_proc=16,
+            remove_columns=con_ds.column_names,
+            desc="Running tokenization"
+        )
+        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False,
+                                                    pad_to_multiple_of=args.max_seq_length)
+        train_sampler = DistributedSampler(
+            tokenized_dataset,
+            num_replicas=args.world_size,
+            rank=args.local_rank,
+            shuffle=True
+        )
+        train_dataloader = torch.utils.data.DataLoader(
+            tokenized_dataset, 
+            batch_size=args.micro_bsz, 
+            sampler=train_sampler,  # 使用分布式 sampler
+            num_workers=4, 
+            pin_memory=True, 
+            drop_last=True, 
+            collate_fn=data_collator
+        ) 
+        val_dataloader = None
+        if args.local_rank == 0:
+            print(f'load preprocessed data from {args.raw_data} done') 
 
     # 设置DeepSpeed配置
     if args.deepspeed:
