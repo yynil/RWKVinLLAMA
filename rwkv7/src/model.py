@@ -216,9 +216,7 @@ class RWKV_Tmix_x070(torch.nn.Module):
         B, T, C = x.size()
         H = self.n_head
         # Check if input tensor has NaN
-        has_nan = self.debug_nan(x, "input x")
         xx = self.time_shift(x) - x
-        self.debug_nan(xx, "time_shift_diff")
         xr = x + xx * self.x_r
         xw = x + xx * self.x_w
         xk = x + xx * self.x_k
@@ -227,13 +225,9 @@ class RWKV_Tmix_x070(torch.nn.Module):
         xg = x + xx * self.x_g
 
         r = self.receptance(xr)
-        self.debug_nan(r, "receptance")
         w = -F.softplus(-(self.w0 + torch.tanh(xw @ self.w1) @ self.w2)) - 0.5 # soft-clamp to (-inf, -0.5)
-        self.debug_nan(w, "w")
         k = self.key(xk)
-        self.debug_nan(k, "key")
         v = self.value(xv)
-        self.debug_nan(v, "value")
         if self.layer_id == 0:
             v_first = v # store the v of the first layer
         else:
@@ -285,23 +279,15 @@ class RWKV_Tmix_x070(torch.nn.Module):
                 # if v_first is not None:
                 #     v_first = v_first * scale
         a = torch.sigmoid(self.a0 + (xa @ self.a1) @ self.a2) # a is "in-context learning rate"
-        self.debug_nan(a, "attention_a")
         g = torch.sigmoid(xg @ self.g1) @ self.g2
-        self.debug_nan(g, "gate_g")
         kk = k * self.k_k
         kk = F.normalize(kk.view(B,T,H,-1), dim=-1, p=2.0).view(B,T,C)
-        self.debug_nan(kk, "normalized_kk")
         k = k * (1 + (a-1) * self.k_a)
-        self.debug_nan(k, "final_k")
         x = RUN_CUDA_RWKV7g(r, w, k, v, -kk, kk*a)
-        self.debug_nan(x, "after_RUN_CUDA_RWKV7g")
         x = self.ln_x(x.view(B * T, C)).view(B, T, C)
-        self.debug_nan(x, "after_ln_x")
         x = x + ((r.view(B,T,H,-1)*k.view(B,T,H,-1)*self.r_k).sum(dim=-1, keepdim=True) * v.view(B,T,H,-1)).view(B,T,C)
-        self.debug_nan(x, "after_residual")
         x = self.output(x * g)
         # needs_rescale = self.check_needs_rescale(x)
-        self.debug_nan(x, "final_output")
         # if needs_rescale:
         #     x = x / 2
         #     print(f'Layer {self.layer_id} rescaled x by 0.5')
