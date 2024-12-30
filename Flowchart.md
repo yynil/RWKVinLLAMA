@@ -66,7 +66,10 @@ Original Decoder Layer:
 ```mermaid
 flowchart TD
     subgraph DecoderLayer
-        A[self_attn] --> B[mlp]
+        A["self_attn"] 
+        A-->C["residual"]
+        C-->D["post layer norm"]
+        D-->B["mlp"]
     end
 ```
 
