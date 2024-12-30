@@ -56,3 +56,74 @@ flowchart TB
     class TrainingLoop process;
     class ModelInit modelInit;
 ```
+
+# Model Illustration
+
+## Stage 1 - TimeMixer replacing Self-Attention
+
+Original Decoder Layer:
+
+```mermaid
+flowchart TD
+    subgraph DecoderLayer
+        A[self_attn] --> B[mlp]
+    end
+```
+
+Add a time mixer in Decoder Layer to learn self_attn:
+
+```mermaid
+flowchart TD
+    Input["Input
+    hidden_states,
+    *args,
+    **kwargs "]
+    
+    subgraph AttentionWrapper
+    direction TB
+        A["Self Attention"] 
+        
+        B["TimeMixer"]
+        
+        
+        D1("Output of Self Attention")
+        
+        D2("Output of TimeMixer")
+
+        E["Calculate hidden states difference
+        Between Self Attention and TimeMixer"]
+
+        A --> D1
+        B --> D2
+        D1 --> E
+        D2 --> E
+    end
+    subgraph OutputOfAttentionWrapper
+    direction TB
+        D3("Hidden States")
+        D4("Hidden States Difference")
+    end
+
+    subgraph DecoderLayerOutput
+    direction TB
+        Output("Hidden States")
+        AttentionScore("Attention Score")
+    end
+    D3 --"add residulal"--> Residual("Residual")
+    Residual --> PostLayerNorm("Post Layer Norm")
+    PostLayerNorm --> MLP("MLP")
+    MLP --> Output
+
+    Input --> AttentionWrapper
+    D1 --"select hidden state to output as output[0]"--> D3("Hidden States")
+    E --"select the difference score as output[1]"--> D4("Hidden States Difference as the second output of Decoder Layer")
+    D4 --> AttentionScore
+
+    style Input fill:#f9f,stroke:#333,stroke-width:4px
+    style D3 fill:#bbf,stroke:#333,stroke-width:4px
+    style D1 fill:#bbf,stroke:#333,stroke-width:4px
+    style D2 fill:#bbf,stroke:#333,stroke-width:4px
+    style D4 fill:#bbf,stroke:#333,stroke-width:4px
+    style Output fill:#bbf,stroke:#333,stroke-width:4px
+    style AttentionScore fill:#bbf,stroke:#333,stroke-width:4px
+```
