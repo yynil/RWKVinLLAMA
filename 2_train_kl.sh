@@ -23,7 +23,8 @@ MAX_TRAINED_TOKENS=100_000_000
 TERMINATE_LOSS=0.01
 WANDB=hybrid_trainer_toys
 WANDB_PROJECT=hybrid_trainer_toys
-while getopts "c:o:p:n:m:b:a:l:f:w:k:g:d:F:s:R:W:S:t:T:W:P:r:" opt; do
+HAS_GROUP_NOMR=""
+while getopts "c:o:p:n:m:b:a:l:f:w:k:g:d:F:s:R:W:S:t:T:W:P:r:G:M:" opt; do
     case $opt in
         c) CONFIG_FILE="$OPTARG";;
         o) OUTPUT_DIR="$OPTARG";;
@@ -48,6 +49,8 @@ while getopts "c:o:p:n:m:b:a:l:f:w:k:g:d:F:s:R:W:S:t:T:W:P:r:" opt; do
         T) TERMINATE_LOSS="$OPTARG";;
         P) WANDB_PROJECT="$OPTARG";;
         W) WANDB="$OPTARG";;
+        G) GPUS_PER_NODE="$OPTARG";;
+        M) HAS_GROUP_NOMR="--has_group_norm";;
         \?) echo "无效的选项 -$OPTARG" >&2; exit 1;;
     esac
 done
@@ -68,6 +71,7 @@ deepspeed \
     --output_dir $OUTPUT_DIR \
     $PREPROCESSED_DATA \
     $RAW_DATA_DIR \
+    $HAS_GROUP_NOMR \
     --num_devices $GPUS_PER_NODE \
     --num_nodes $NNODES \
     --micro_bsz $MICRO_BSZ \

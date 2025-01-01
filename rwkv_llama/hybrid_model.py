@@ -43,11 +43,9 @@ from typing import Optional, Tuple
 RWKV_VERSION=os.environ.get('RWKV_VERSION','v7')
 is_rwkv_7 = RWKV_VERSION == 'v7'
 if is_rwkv_7 :
-    from rwkv7.src.model import Block
-    from rwkv7.src.model import RWKV_Tmix_x070 as TimeMixer
+    from TimeMixer import RWKV_Tmix_x070 as TimeMixer
 else:
-    from rwkv.src.model import Block
-    from rwkv.src.model import RWKV_Tmix_x060 as TimeMixer
+    from TimeMixer import RWKV_Tmix_x060 as TimeMixer
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
@@ -69,57 +67,6 @@ logging.basicConfig(
     format='%(asctime)s | %(levelname)s | %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
-from train_functions import train_step,  configure_optimizer, validation_step,initialize_nccl_client
-
-class RWKVDecoderLayer(nn.Module):
-    def __init__(
-        self,
-        args,
-        layer_idx: int
-    ):
-        super(RWKVDecoderLayer, self).__init__()
-        self.block = Block(args,layer_idx)
-        self.layer_idx = layer_idx
-        self.args = args
-
-    def forward(self, hidden_states: torch.Tensor, inference_params=None, *args, **kwargs):
-        hidden_states.requires_grad_(True)
-        if is_rwkv_7:
-            #if we don't have v_first in kwargs, we create an empty v_first tensor
-            global v_first
-            if v_first is None:
-                v_first = torch.empty_like(hidden_states)
-            #     print(f'empty v_first in layer {self.layer_idx}')
-            # else:
-            #     print(f'reuse v_first in layer {self.layer_idx}')
-        if self.args.grad_cp == 1:
-            if is_rwkv_7:
-                hidden_states,v_first = deepspeed.checkpointing.checkpoint(self.block, hidden_states, v_first)
-            else:
-                hidden_states = deepspeed.checkpointing.checkpoint(self.block, hidden_states)
-        else:
-            if is_rwkv_7:
-                hidden_states,v_first = self.block(hidden_states, v_first)
-            else:
-                hidden_states = self.block(hidden_states)
-        # hidden_states = self.block(hidden_states)
-        # logging.info(f'forward in {self.layer_idx}')
-        # so here is just to be compatible with Transformer
-
-        past_key_value = kwargs.get("past_key_value", None)
-
-        if past_key_value is not None:
-            dummy_keys = torch.ones(
-                1, 1, hidden_states.size(1), 1, device=hidden_states.device, dtype=hidden_states.dtype
-            )
-            dummy_values = torch.ones(
-                1, 1, hidden_states.size(1), 1, device=hidden_states.device, dtype=hidden_states.dtype
-            )
-            # Update kv cache with dummy values
-            past_key_value.update(dummy_keys, dummy_values, self.layer_idx)
-
-        return (hidden_states, None, past_key_value)
-    
 
 class VFirstHolder(nn.Module):
     
@@ -251,38 +198,13 @@ class HybridModel(nn.Module):
         # 替换层的逻辑保持不变
         for layer_idx in range(transformer_model.config.num_hidden_layers):
             if layer_idx in rwkv_args.layers:
-                if not rwkv_args.is_rwkv_att_only:
-                    decoder = RWKVDecoderLayer(rwkv_args, layer_idx)
-                    llama_layer = transformer_model.model.layers[layer_idx]
-                    if rwkv_args.init_with_llama:
-                        print(f'init parameters with llama in layer {layer_idx}')
-                        decoder.block.att.receptance.weight.data = llama_layer.self_attn.q_proj.weight.data
-                        decoder.block.att.key.weight.data = llama_layer.self_attn.k_proj.weight.data.repeat(n_share, 1)
-                        decoder.block.att.value.weight.data = llama_layer.self_attn.v_proj.weight.data.repeat(n_share, 1)
-                        decoder.block.att.output.weight.data = llama_layer.self_attn.o_proj.weight.data
-                    
-                    if rwkv_args.is_llama_ffn:
-                        decoder.block.ffn = llama_layer.mlp
-                    else:
-                        decoder.block.ffn.c_fc.weight.data = llama_layer.mlp.up_proj.weight.data
-                        decoder.block.ffn.c_proj.weight.data = llama_layer.mlp.down_proj.weight.data
-                    
-                    transformer_model.model.layers[layer_idx] = decoder
-                    del llama_layer
-                else:
-                    #Only replace the attention layer with TimeMixer
-                    student_attn = TimeMixer(rwkv_args, layer_idx)
-                    llama_layer = transformer_model.model.layers[layer_idx]
-                    # if stage == 1:
-                    #     teacher_attn = llama_layer.self_attn
-                    # else:
-                    #     teacher_attn = None
-                    #Remove the teacher_attn out of the model which makes
-                    #deepspeed can initialize the model easily
-                    attn_wrapper = AttentionWrapper(None,student_attn,layer_idx,rwkv_args)
-                    llama_layer.self_attn = attn_wrapper
-                    import gc
-                    gc.collect()
+                #Only replace the attention layer with TimeMixer
+                student_attn = TimeMixer(rwkv_args, layer_idx)
+                llama_layer = transformer_model.model.layers[layer_idx]
+                attn_wrapper = AttentionWrapper(None,student_attn,layer_idx,rwkv_args)
+                llama_layer.self_attn = attn_wrapper
+                import gc
+                gc.collect()
         self.model = transformer_model
         self.add_module("model", self.model)
         self.args = rwkv_args

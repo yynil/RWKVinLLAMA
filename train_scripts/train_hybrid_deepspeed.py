@@ -64,9 +64,10 @@ def create_arg_parser():
     parser.add_argument('--num_epochs', type=int, default=1, help='number of epochs to train the model')
     parser.add_argument('--max_seq_length', type=int, default=512, help='maximum sequence length to train the model')
     parser.add_argument('--num_devices', type=int, default = 1,help='number of devices to train the model')
-    
+    parser.add_argument('--has_group_norm', action='store_true',default=False,help='whether the Time Mixer has group norm')
     parser.add_argument('--min_len', type=int, default=0, help='minimum length of the input')
     parser.add_argument('--max_len', type=int, default=4096, help='maximum length of the input')
+    
     parser.add_argument('--dropout', type=float, default=0, help='dropout rate in the model')
     parser.add_argument('--grad_cp', type=int, default=0, help='gradient checkpoint in the model')
     parser.add_argument('--save_per_batches', type=int, default=10000, help='number of batches to save the model')
